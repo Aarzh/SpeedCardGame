@@ -1,6 +1,6 @@
 /*
     Speed Project
-    Aaron Zajac & Eugenio Leal
+    Aaron Zajac, Eugenio Leal, Mauricio Rico
 */
 
 #include <stdio.h>
@@ -27,6 +27,17 @@
 
 ///// Structure definitions
 
+typedef struct player_struct {
+
+} player_t;
+
+typedef struct speed_struct {
+    // Store the total number of operations performed
+    int total_operations;
+    // A pointer to clients
+    player_t * players;
+} speed_t;
+
 // Structure for the mutexes to keep the data consistent
 typedef struct locks_struct {
     // Mutex for the number of transactions variable
@@ -44,16 +55,20 @@ typedef struct data_struct {
 } thread_data_t;
 
 
+// Global Varibles
+int isInterrupted = 0;
 
 ///// FUNCTION DECLARATIONS
 // HACE FALTA CHECAR SI DEBEMOS DE HACER UN STRUCT DE BARAJAS
 // QUE ESTE DENTRO DE OTRO STRUCT DE PLAYER QUE VA A TENER TURNO Y BARAJAS DEL JUGADOR
 void usage(char * program);
-void setupHandlers();
 void initSpeed(locks_t * data_locks);
 void waitForConnections(int server_fd, locks_t * data_locks);
 void * attentionThread(void * arg);
 void closeBoard(locks_t * data_locks);
+// Signals
+void setupHandlers();
+void onInterrupt(int signal);
 
 ///// MAIN FUNCTION
 //SI SE HACE EL STRUCT METERLO COMO BANK_DATA
@@ -86,7 +101,7 @@ int main(int argc, char * argv[])
     close(server_fd);
 
     // Clean the memory used
-    closeBank(&data_locks);
+    closeBoard(&data_locks);
 
     // Finish the main thread
     pthread_exit(NULL);
@@ -104,6 +119,11 @@ void usage(char * program)
     printf("Usage:\n");
     printf("\t%s {port_number}\n", program);
     exit(EXIT_FAILURE);
+}
+
+void onInterrupt(int signal) {
+    // Set the global variable to be true
+    isInterrupted = 1;
 }
 
 /*
@@ -133,26 +153,26 @@ void setupHandlers()
     Function to initialize all the information necessary
     This will allocate memory for the accounts, and for the mutexes
 */
-/* HACEN FALTA CORRECCIONES DEPENDIENDO EL STRUCT
-void initBank(bank_t * bank_data, locks_t * data_locks)
+// HACEN FALTA CORRECCIONES DEPENDIENDO EL STRUCT
+void initSpeed(bank_t * bank_data, locks_t * data_locks)
 {
-    // Set the number of transactions
-    bank_data->total_transactions = 0;
+    // // Set the number of transactions
+    // bank_data->total_transactions = 0;
 
-    // Allocate the arrays in the structures
-    bank_data->account_array = malloc(NUM_ACCOUNTS * sizeof (account_t));
-    // Allocate the arrays for the mutexes
-    data_locks->account_mutex = malloc(NUM_ACCOUNTS * sizeof (pthread_mutex_t));
+    // // Allocate the arrays in the structures
+    // bank_data->account_array = malloc(NUM_ACCOUNTS * sizeof (account_t));
+    // // Allocate the arrays for the mutexes
+    // data_locks->account_mutex = malloc(NUM_ACCOUNTS * sizeof (pthread_mutex_t));
 
-    // Initialize the mutexes, using a different method for dynamically created ones
-    //data_locks->transactions_mutex = PTHREAD_MUTEX_INITIALIZER;
-    pthread_mutex_init(&data_locks->transactions_mutex, NULL);
-    for (int i=0; i<NUM_ACCOUNTS; i++)
-    {
-        //data_locks->account_mutex[i] = PTHREAD_MUTEX_INITIALIZER;
-        pthread_mutex_init(&data_locks->account_mutex[i], NULL);
-    }
-}*/
+    // // Initialize the mutexes, using a different method for dynamically created ones
+    // //data_locks->transactions_mutex = PTHREAD_MUTEX_INITIALIZER;
+    // pthread_mutex_init(&data_locks->transactions_mutex, NULL);
+    // for (int i=0; i<NUM_ACCOUNTS; i++)
+    // {
+    //     //data_locks->account_mutex[i] = PTHREAD_MUTEX_INITIALIZER;
+    //     pthread_mutex_init(&data_locks->account_mutex[i], NULL);
+    // }
+}
 
 /*
     Main loop to wait for incomming connections
@@ -166,6 +186,7 @@ void waitForConnections(int server_fd, locks_t * data_locks)
     int client_fd;
     pthread_t new_tid;
     thread_data_t * connection_data = NULL;
+    int status;
     int poll_response;
 	int timeout = 500;		// Time in milliseconds (0.5 seconds)
 
@@ -262,9 +283,12 @@ void * attentionThread(void * arg)
 */
 //MISSING PLAYER STRUCT
 //HAY UN ERROR ACA
-void closeBank(locks_t * data_locks)
+void closeBoard(locks_t * data_locks)
 {
     printf("DEBUG: Clearing the memory for the thread\n");
-    free(data_locks->hand_l);
-    free(data_locks->hand_r);
+    // Free all malloc'd data
+    // free(bank_data->account_array);
+    // free(data_locks->account_mutex);
 }
+
+//testing my branch
