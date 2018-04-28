@@ -15,7 +15,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 // Custom libraries
-#include "bank_codes.h"
+#include "speed_codes.h"
 #include "sockets.h"
 #include "fatal_error.h"
 
@@ -23,14 +23,14 @@
 
 ///// FUNCTION DECLARATIONS
 void usage(char * program);
-void bankOperations(int connection_fd);
+void speedOperations(int connection_fd);
 
 ///// MAIN FUNCTION
 int main(int argc, char * argv[])
 {
     int connection_fd;
 
-    printf("\n=== BANK CLIENT PROGRAM ===\n");
+    printf("\n=== SPEED CARD GAME ===\n");
 
     // Check the correct arguments
     if (argc != 3)
@@ -41,7 +41,7 @@ int main(int argc, char * argv[])
     // Start the server
     connection_fd = connectSocket(argv[1], argv[2]);
 	// Use the bank operations available
-    bankOperations(connection_fd);
+    speedOperations(connection_fd);
     // Close the socket
     close(connection_fd);
 
@@ -63,12 +63,11 @@ void usage(char * program)
 /*
     Main menu with the options available to the user
 */
-void bankOperations(int connection_fd)
+void speedOperations(int connection_fd)
 {
     char buffer[BUFFER_SIZE];
     int account;
     float amount;
-    float balance;
     char option = 'c';
     int status;
     operation_t operation;
@@ -86,7 +85,6 @@ void bankOperations(int connection_fd)
         // Init variables to default values
         account = 0;
         amount = 0;
-        balance = 0;
 
         switch(option)
         {
@@ -125,7 +123,7 @@ void bankOperations(int connection_fd)
         }
 
         // Prepare the message to the server
-        sprintf(buffer, "%d %d %f", operation, account, amount);
+        sprintf(buffer, "%d", operation);
 
         // SEND
         // Send the request
@@ -139,13 +137,13 @@ void bankOperations(int connection_fd)
             break;
         }
         // Extract the data
-        sscanf(buffer, "%d %f", &status, &balance);
+        sscanf(buffer, "%d", &status);
 
         // Print the result
         switch (status)
         {
             case OK:
-                printf("\tThe balance in account %d is %.2f\n", account, balance);
+                printf("\tTesting... hello from server\n");
                 break;
             case INSUFFICIENT:
                 printf("\tInsufficient funds for the transaction selected\n");

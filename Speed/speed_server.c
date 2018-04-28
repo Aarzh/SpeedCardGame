@@ -17,20 +17,22 @@
 #include <pthread.h>
 
 // Custom libraries
-#include "bank_codes.h"
+#include "speed_codes.h"
 #include "sockets.h"
 #include "fatal_error.h"
 
-#define NUM_ACCOUNTS 4
+#define NUM_CLIENTS 2
 #define BUFFER_SIZE 1024
 #define MAX_QUEUE 5
 
 ///// Structure definitions
 
+// Structure for the player's data
 typedef struct player_struct {
-
+    
 } player_t;
 
+// Structure for the game's data
 typedef struct speed_struct {
     // Store the total number of operations performed
     int total_operations;
@@ -38,20 +40,21 @@ typedef struct speed_struct {
     player_t * players;
 } speed_t;
 
+// TODO: decide if you can have multiple games at a time or not
 // Structure for the mutexes to keep the data consistent
 typedef struct locks_struct {
-    // Mutex for the number of transactions variable
-    pthread_mutex_t hand_r;
-    // Mutex array for the operations on the accounts
-    pthread_mutex_t hand_l;
+    // Mutex array
+    pthread_mutex_t * shared_pile;
 } locks_t;
 
-// Data that will be sent to each structure
+// Data that will be sent to each thread
 typedef struct data_struct {
     // The file descriptor for the socket
     int connection_fd;
+    // A pointer to the speed data structure
+    speed_t * speed_data;
     // A pointer to a locks structure
-    locks_t * hand_locks;
+    locks_t * data_locks;
 } thread_data_t;
 
 
@@ -62,19 +65,23 @@ int isInterrupted = 0;
 // HACE FALTA CHECAR SI DEBEMOS DE HACER UN STRUCT DE BARAJAS
 // QUE ESTE DENTRO DE OTRO STRUCT DE PLAYER QUE VA A TENER TURNO Y BARAJAS DEL JUGADOR
 void usage(char * program);
-void initSpeed(locks_t * data_locks);
+void initSpeed(speed_t * speed_data, locks_t * data_locks);
 void waitForConnections(int server_fd, locks_t * data_locks);
 void * attentionThread(void * arg);
 void closeBoard(locks_t * data_locks);
 // Signals
 void setupHandlers();
 void onInterrupt(int signal);
+//
+int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, int operation);
+
 
 ///// MAIN FUNCTION
 //SI SE HACE EL STRUCT METERLO COMO BANK_DATA
 int main(int argc, char * argv[])
 {
     int server_fd;
+    speed_t speed_data;
     locks_t data_locks;
 
     printf("\n=== SPEED SERVER ===\n");
@@ -89,7 +96,7 @@ int main(int argc, char * argv[])
     setupHandlers();
 
     // Initialize the data structures
-    initSpeed(&data_locks);
+    initSpeed(&speed_data, &data_locks);
 
 	// Show the IPs assigned to this computer
 	printLocalIPs();
@@ -154,24 +161,26 @@ void setupHandlers()
     This will allocate memory for the accounts, and for the mutexes
 */
 // HACEN FALTA CORRECCIONES DEPENDIENDO EL STRUCT
-void initSpeed(bank_t * bank_data, locks_t * data_locks)
+void initSpeed(speed_t * speed_data, locks_t * data_locks)
 {
     // // Set the number of transactions
     // bank_data->total_transactions = 0;
 
-    // // Allocate the arrays in the structures
+    // Allocate the arrays in the structures
     // bank_data->account_array = malloc(NUM_ACCOUNTS * sizeof (account_t));
-    // // Allocate the arrays for the mutexes
-    // data_locks->account_mutex = malloc(NUM_ACCOUNTS * sizeof (pthread_mutex_t));
+    // Allocate the arrays for the mutexes
+    data_locks->shared_pile = malloc(NUM_CLIENTS * sizeof (pthread_mutex_t));
 
     // // Initialize the mutexes, using a different method for dynamically created ones
     // //data_locks->transactions_mutex = PTHREAD_MUTEX_INITIALIZER;
     // pthread_mutex_init(&data_locks->transactions_mutex, NULL);
-    // for (int i=0; i<NUM_ACCOUNTS; i++)
-    // {
-    //     //data_locks->account_mutex[i] = PTHREAD_MUTEX_INITIALIZER;
-    //     pthread_mutex_init(&data_locks->account_mutex[i], NULL);
-    // }
+    
+    for (int i=0; i<NUM_CLIENTS; i++)
+    {
+        // Initializing mutex array using either of the following methods
+        // data_locks->shared_pile[i] = PTHREAD_MUTEX_INITIALIZER;
+        pthread_mutex_init(&data_locks->shared_pile[i], NULL);
+    }
 }
 
 /*
@@ -264,16 +273,42 @@ void waitForConnections(int server_fd, locks_t * data_locks)
 void * attentionThread(void * arg)
 {
     // Receive the data for the bank, mutexes and socket file descriptor
+    thread_data_t * connection_data = (thread_data_t *) arg;
+
+    char buffer[BUFFER_SIZE];
+    int operation = CHECK;
+    int status;
 
     // Loop to listen for messages from the client
-
+    while(operation != EXIT && !isInterrupted) {
+        // RECV
         // Receive the request
+        if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
+        {
+            printf("Client closed the connection\n");
+            break;
+        }
+        // Read the data from the socket message
+        sscanf(buffer, "%d", &operation);
+
+        printf(" > Client requested operation '%d'\n", operation);
+
 
         // Process the request being careful of data consistency
-
-        // Update the number of transactions
+        status = processOperation(connection_data->speed_data, connection_data->data_locks, buffer, operation);
 
         // Send a reply
+        printf(" > Sending to Client\n");
+
+        // Prepare the response to the client
+        sprintf(buffer, "%d", status);
+        // SEND
+        // Send the response
+        sendString(connection_data->connection_fd, buffer);
+    }
+    
+    // Free memory sent to this thread
+    free(connection_data);
 
     pthread_exit(NULL);
 }
@@ -288,7 +323,27 @@ void closeBoard(locks_t * data_locks)
     printf("DEBUG: Clearing the memory for the thread\n");
     // Free all malloc'd data
     // free(bank_data->account_array);
-    // free(data_locks->account_mutex);
+    free(data_locks->shared_pile);
 }
 
-//testing my branch
+int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, int operation)
+{
+    int status;
+
+    switch (operation)
+    {
+        case 1:
+            printf("Testing... Case 1\n");
+            status = 1;
+            break;
+        // Invalid message
+        default:
+            // Print an error locally
+            printf("Unknown operation requested\n");
+            // Set the error status
+            status = ERROR;
+            break;
+    }
+
+    return status;
+}
