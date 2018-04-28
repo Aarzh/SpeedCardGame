@@ -1,10 +1,8 @@
 /*
-    Client program to access the accounts in the bank
-    This program connects to the server using sockets
+    Aaron Zajac, Eugenio Leal, Mauricio Rico
 
-    Gilberto Echeverria
-    gilecheverria@yahoo.com
-    29/03/2018
+    Client program
+    This program connects to the server using sockets
 */
 
 #include <stdio.h>
@@ -15,7 +13,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 // Custom libraries
-#include "bank_codes.h"
+#include "speed_codes.h"
 #include "sockets.h"
 #include "fatal_error.h"
 
@@ -23,14 +21,14 @@
 
 ///// FUNCTION DECLARATIONS
 void usage(char * program);
-void bankOperations(int connection_fd);
+void speedOperations(int connection_fd);
 
 ///// MAIN FUNCTION
 int main(int argc, char * argv[])
 {
     int connection_fd;
 
-    printf("\n=== BANK CLIENT PROGRAM ===\n");
+    printf("\n=== SPEED CARD GAME ===\n");
 
     // Check the correct arguments
     if (argc != 3)
@@ -41,7 +39,7 @@ int main(int argc, char * argv[])
     // Start the server
     connection_fd = connectSocket(argv[1], argv[2]);
 	// Use the bank operations available
-    bankOperations(connection_fd);
+    speedOperations(connection_fd);
     // Close the socket
     close(connection_fd);
 
@@ -63,57 +61,48 @@ void usage(char * program)
 /*
     Main menu with the options available to the user
 */
-void bankOperations(int connection_fd)
+void speedOperations(int connection_fd)
 {
     char buffer[BUFFER_SIZE];
-    int account;
-    float amount;
-    float balance;
     char option = 'c';
     int status;
     operation_t operation;
 
+    printf("+----------------------------------+\n");
+    printf("| 1-5) Select Card #               |\n");
+    printf("| 6) Exit program                  |\n");
+    printf("+----------------------------------+\n");
+
     while (option != 'x')
     {
-        printf("Bank menu:\n");
-        printf("\tc. Check balance\n");
-        printf("\td. Deposit into account\n");
-        printf("\tw. Withdraw from account\n");
-        printf("\tx. Exit program\n");
         printf("Select an option: ");
         scanf(" %c", &option);
 
         // Init variables to default values
-        account = 0;
-        amount = 0;
-        balance = 0;
 
         switch(option)
         {
-            // Check balance
-            case 'c':
-                printf("Enter account: ");
-                scanf("%d", &account);
-                operation = CHECK;
+            case '1':
+                operation = FIRST_CARD;
+                printf("First Card! Select a pile:\n");
                 break;
-            // Deposit into account
-            case 'd':
-                printf("Enter account: ");
-                scanf("%d", &account);
-                printf("Enter the amount to deposit: ");
-                scanf("%f", &amount);
-                operation = DEPOSIT;
+            case '2':
+                operation = SECOND_CARD;
+                printf("Second Card! Select a pile:\n");
                 break;
-            // Withdraw from account
-            case 'w':
-                printf("Enter account: ");
-                scanf("%d", &account);
-                printf("Enter the amount to deposit: ");
-                scanf("%f", &amount);
-                operation = WITHDRAW;
+            case '3':
+                operation = THIRD_CARD;
+                printf("Third Card! Select a pile:\n");
                 break;
-            // Exit the bank
-            case 'x':
+            case '4':
+                printf("Fourth Card! Select a pile:\n");
+                operation = FOURTH_CARD;
+                break;
+            case '5':
+                printf("Fifth Card! Select a pile:\n");
+                operation = FIFTH_CARD;
+                break;
+            case '6':
                 printf("Thanks for using the program. Bye!\n");
                 operation = EXIT;
                 break;
@@ -125,7 +114,7 @@ void bankOperations(int connection_fd)
         }
 
         // Prepare the message to the server
-        sprintf(buffer, "%d %d %f", operation, account, amount);
+        sprintf(buffer, "%d", operation);
 
         // SEND
         // Send the request
@@ -139,22 +128,16 @@ void bankOperations(int connection_fd)
             break;
         }
         // Extract the data
-        sscanf(buffer, "%d %f", &status, &balance);
+        sscanf(buffer, "%d", &status);
 
         // Print the result
         switch (status)
         {
             case OK:
-                printf("\tThe balance in account %d is %.2f\n", account, balance);
-                break;
-            case INSUFFICIENT:
-                printf("\tInsufficient funds for the transaction selected\n");
-                break;
-            case NO_ACCOUNT:
-                printf("\tInvalid acount number entered\n");
+                printf("\tTesting... SUCCESS!\n");
                 break;
             case BYE:
-                printf("\tThanks for connecting to the bank. Good bye!\n");
+                printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
                 break;
             case ERROR: default:
                 printf("\tInvalid operation. Try again\n");
