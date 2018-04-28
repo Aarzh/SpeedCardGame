@@ -68,6 +68,11 @@ void speedOperations(int connection_fd)
     int status;
     operation_t operation;
 
+    printf("+----------------------------------+\n");
+    printf("| 1-5) Select Card #               |\n");
+    printf("| 6) Exit program                  |\n");
+    printf("+----------------------------------+\n");
+
     while (option != 'x')
     {
         printf("Select an option: ");
@@ -77,20 +82,27 @@ void speedOperations(int connection_fd)
 
         switch(option)
         {
-            // Check balance
-            case 'c':
-                operation = CHECK;
+            case '1':
+                operation = FIRST_CARD;
+                printf("First Card! Select a pile:\n");
                 break;
-            // Deposit into account
-            case 'd':
-                operation = DEPOSIT;
+            case '2':
+                operation = SECOND_CARD;
+                printf("Second Card! Select a pile:\n");
                 break;
-            // Withdraw from account
-            case 'w':
-                operation = WITHDRAW;
+            case '3':
+                operation = THIRD_CARD;
+                printf("Third Card! Select a pile:\n");
                 break;
-            // Exit the bank
-            case 'x':
+            case '4':
+                printf("Fourth Card! Select a pile:\n");
+                operation = FOURTH_CARD;
+                break;
+            case '5':
+                printf("Fifth Card! Select a pile:\n");
+                operation = FIFTH_CARD;
+                break;
+            case '6':
                 printf("Thanks for using the program. Bye!\n");
                 operation = EXIT;
                 break;
@@ -122,16 +134,10 @@ void speedOperations(int connection_fd)
         switch (status)
         {
             case OK:
-                printf("\tTesting... hello from server\n");
-                break;
-            case INSUFFICIENT:
-                printf("\tInsufficient funds for the transaction selected\n");
-                break;
-            case NO_ACCOUNT:
-                printf("\tInvalid acount number entered\n");
+                printf("\tTesting... SUCCESS!\n");
                 break;
             case BYE:
-                printf("\tThanks for connecting to the bank. Good bye!\n");
+                printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
                 break;
             case ERROR: default:
                 printf("\tInvalid operation. Try again\n");
