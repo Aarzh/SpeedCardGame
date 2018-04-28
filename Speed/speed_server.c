@@ -34,8 +34,6 @@ typedef struct player_struct {
 
 // Structure for the game's data
 typedef struct speed_struct {
-    // Store the total number of operations performed
-    int total_operations;
     // A pointer to clients
     player_t * players;
 } speed_t;
@@ -66,7 +64,7 @@ int isInterrupted = 0;
 // QUE ESTE DENTRO DE OTRO STRUCT DE PLAYER QUE VA A TENER TURNO Y BARAJAS DEL JUGADOR
 void usage(char * program);
 void initSpeed(speed_t * speed_data, locks_t * data_locks);
-void waitForConnections(int server_fd, locks_t * data_locks);
+void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_locks);
 void * attentionThread(void * arg);
 void closeBoard(locks_t * data_locks);
 // Signals
@@ -103,7 +101,7 @@ int main(int argc, char * argv[])
     // Start the server
     server_fd = initServer(argv[1], MAX_QUEUE);
 	// Listen for connections from the clients
-    waitForConnections(server_fd, &data_locks);
+    waitForConnections(server_fd, &speed_data, &data_locks);
     // Close the socket
     close(server_fd);
 
@@ -187,7 +185,7 @@ void initSpeed(speed_t * speed_data, locks_t * data_locks)
     Main loop to wait for incomming connections
 */
 //MISSING PLAYER STRUCT
-void waitForConnections(int server_fd, locks_t * data_locks)
+void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_locks)
 {
     struct sockaddr_in client_address;
     socklen_t client_address_size;
@@ -250,6 +248,10 @@ void waitForConnections(int server_fd, locks_t * data_locks)
 				printf("Received incomming connection from %s on port %d\n", client_presentation, client_address.sin_port);
 
 				// Prepare the structure to send to the thread
+                connection_data = malloc(sizeof (thread_data_t));
+                connection_data->connection_fd = client_fd;
+                connection_data->speed_data = speed_data;
+                connection_data->data_locks = data_locks;
 
 				// CREATE A THREAD
                 status = pthread_create(&new_tid, NULL, attentionThread, (void *)connection_data);
@@ -272,6 +274,7 @@ void waitForConnections(int server_fd, locks_t * data_locks)
 */
 void * attentionThread(void * arg)
 {
+    printf("Hello from thread\n");
     // Receive the data for the bank, mutexes and socket file descriptor
     thread_data_t * connection_data = (thread_data_t *) arg;
 

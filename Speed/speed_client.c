@@ -1,10 +1,8 @@
 /*
-    Client program to access the accounts in the bank
-    This program connects to the server using sockets
+    Aaron Zajac, Eugenio Leal, Mauricio Rico
 
-    Gilberto Echeverria
-    gilecheverria@yahoo.com
-    29/03/2018
+    Client program
+    This program connects to the server using sockets
 */
 
 #include <stdio.h>
@@ -66,48 +64,29 @@ void usage(char * program)
 void speedOperations(int connection_fd)
 {
     char buffer[BUFFER_SIZE];
-    int account;
-    float amount;
     char option = 'c';
     int status;
     operation_t operation;
 
     while (option != 'x')
     {
-        printf("Bank menu:\n");
-        printf("\tc. Check balance\n");
-        printf("\td. Deposit into account\n");
-        printf("\tw. Withdraw from account\n");
-        printf("\tx. Exit program\n");
         printf("Select an option: ");
         scanf(" %c", &option);
 
         // Init variables to default values
-        account = 0;
-        amount = 0;
 
         switch(option)
         {
             // Check balance
             case 'c':
-                printf("Enter account: ");
-                scanf("%d", &account);
                 operation = CHECK;
                 break;
             // Deposit into account
             case 'd':
-                printf("Enter account: ");
-                scanf("%d", &account);
-                printf("Enter the amount to deposit: ");
-                scanf("%f", &amount);
                 operation = DEPOSIT;
                 break;
             // Withdraw from account
             case 'w':
-                printf("Enter account: ");
-                scanf("%d", &account);
-                printf("Enter the amount to deposit: ");
-                scanf("%f", &amount);
                 operation = WITHDRAW;
                 break;
             // Exit the bank
