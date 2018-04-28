@@ -200,7 +200,7 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
     // Get the size of the structure to store client information
     client_address_size = sizeof client_address;
 
-    while (1)
+    while (!isInterrupted)
     {
 		//// POLL
         // Create a structure array to hold the file descriptors to poll
@@ -217,7 +217,7 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
             // Test if the error was caused by an interruption
             if (errno == EINTR)
             {
-                printf("Poll did not finish. The program was interrupted");
+                printf("\nPoll did not finish. The program was interrupted\n");
             }
             else
             {
