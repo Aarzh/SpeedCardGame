@@ -21,9 +21,9 @@
 #include "sockets.h"
 #include "fatal_error.h"
 
-#define NUM_ACCOUNTS 4
+#define PILE_CENTER 52
 #define BUFFER_SIZE 1024
-#define MAX_QUEUE 5
+#define PILE_CORNERS 5
 
 ///// Structure definitions
 
@@ -54,6 +54,19 @@ typedef struct data_struct {
     locks_t * hand_locks;
 } thread_data_t;
 
+typedef struct card_struct{
+    int num;
+    int spin;
+}card_t;
+
+
+typedef struct board_struct{
+    card_t pile_left[PILE_CORNERS];
+    card_t pile_right[PILE_CORNERS];
+    card_t pile_centerR[PILE_CENTER];
+    card_t pile_centerL[PILE_CENTER];
+}board_t;
+
 
 // Global Varibles
 int isInterrupted = 0;
@@ -69,6 +82,9 @@ void closeBoard(locks_t * data_locks);
 // Signals
 void setupHandlers();
 void onInterrupt(int signal);
+void shufflePile(board_t & piles);
+void randomize (board_t &pile );
+void swap (card_t a, card_t b);
 
 ///// MAIN FUNCTION
 //SI SE HACE EL STRUCT METERLO COMO BANK_DATA
@@ -154,7 +170,7 @@ void setupHandlers()
     This will allocate memory for the accounts, and for the mutexes
 */
 // HACEN FALTA CORRECCIONES DEPENDIENDO EL STRUCT
-void initSpeed(bank_t * bank_data, locks_t * data_locks)
+void initSpeed(locks_t * data_locks)
 {
     // // Set the number of transactions
     // bank_data->total_transactions = 0;
@@ -292,3 +308,61 @@ void closeBoard(locks_t * data_locks)
 }
 
 //testing my branch
+
+
+void shufflePile(board_t &pile){
+        for(int i = 0; i<PILE_CENTER; i++){
+            for(int j = 0; j<PILE_CENTER; j++){
+                if(pile->pile_centerL[i] != 0 && pile->pile_centerR[j] == 0){
+                    pile->pile_centerR[j] = pile->pile_centerL[i];
+                }else if(pile->pile_centerL[i] == 0 && pile->pile_centerR[j] == 0){
+                    i++;
+                }else if(pile->pile_centerL[i] != 0 && pile->pile_centerR[j] != 0){
+                    j++;
+                }else{//cuando L no tiene y R si
+                    ++i;
+                    j++;
+                }
+            }
+        }
+        randomize(&pile);
+        for(int i = 0; i<PILE_CENTER/2; i++){
+            for(int j = 0; j<PILE_CENTER/2; j++){
+                if(pile->pile_centerR[i] != 0 && pile->pile_centerL[j] == 0){
+                    pile->pile_centerL[j] = pile->pile_centerR[i];
+                }else if(pile->pile_centerL[i] == 0 && pile->pile_centerR[j] == 0){
+                    j++;
+                }else if(pile->pile_centerL[i] != 0 && pile->pile_centerR[j] != 0){
+                    i++;
+                }else{
+                    ++j;
+                }
+            }
+        }
+    }
+}
+
+void swap (card_t a, card_t b)
+{
+    card_t temp = *a;
+    *a = *b;
+    *b = temp;
+}
+ 
+void randomize (board_t &pile )
+{
+    // Use a different seed value so that we don't get same
+    // result each time we run this program
+    srand ( time(NULL) );
+ 
+    // Start from the last element and swap one by one. We don't
+    // need to run for the first element that's why i > 0
+    for (int i = PILE_CENTER; i > 0; i--)
+    {
+        // Pick a random index from 0 to i
+        int j = rand() % (i+1);
+ 
+        // Swap arr[i] with the element at random index
+        swap(&pile->pile_centerR[i], &pile->pile_centerR[j]);
+    }
+}
