@@ -5,11 +5,11 @@
 # The files that must be compiled, with a .o extension
 OBJECTS = fatal_error.o sockets.o
 # The header files
-DEPENDS = fatal_error.h sockets.h bank_codes.h
+DEPENDS = fatal_error.h sockets.h speed_codes.h
 # The executable programs to be created
-CLIENT = bank_client
+CLIENT = speed_client
 #CLIENT = pi_client
-SERVER = bank_server
+SERVER = speed_server
 
 ### Variables for the compilation rules ###
 # These should work for most projects, but can be modified when necessary
