@@ -15,7 +15,7 @@
 #include <sys/poll.h>
 // Posix threads library
 #include <pthread.h>
-// Pretty Unicode Suits
+// Pretty Unicode Card Suits
 // #include <wchar.h>
 // #include <locale.h>
 
@@ -53,6 +53,8 @@ typedef struct player_struct {
 
 // Structure for the game's data
 typedef struct speed_struct {
+    // Store the number of players
+    int number_of_players;
     // A pointer to clients
     player_t * players;
     // Two center piles
@@ -189,6 +191,9 @@ void setupHandlers()
 // HACEN FALTA CORRECCIONES DEPENDIENDO EL STRUCT
 void initSpeed(speed_t * speed_data, locks_t * data_locks)
 {
+    // Initialize the number of players to zero
+    speed_data->number_of_players = 0;
+
     // Allocate the arrays for the mutexes
     data_locks->center_pile_mutex = malloc(NUM_CLIENTS * sizeof (pthread_mutex_t));
     
@@ -293,9 +298,9 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
 */
 void * attentionThread(void * arg)
 {
-    printf("Hello from thread\n");
     // Receive the data for the bank, mutexes and socket file descriptor
     thread_data_t * connection_data = (thread_data_t *) arg;
+    printf("Player %d connected!\n", ++connection_data->speed_data->number_of_players);
 
     char buffer[BUFFER_SIZE];
     int operation = 0;
@@ -303,6 +308,19 @@ void * attentionThread(void * arg)
 
     // Loop to listen for messages from the client
     while(operation != EXIT && !isInterrupted) {
+        printf("Testing.. > Sending to Client\n");
+        // SEND
+        // Send the cards to player
+        // sprintf(buffer, "%d %s %s %s", 
+        //         0, 
+        //         connection_data->speed_data->center_pile_1[0].rank,
+        //         connection_data->speed_data->center_pile_2[0].rank,
+        //         connection_data->speed_data->players[connection_data->speed_data->number_of_players - 1].hand[0].rank
+        //         );
+        // Testing with hardcoded values
+        sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A", "10", "2", "4", "J", "9", "8");
+        sendString(connection_data->connection_fd, buffer);
+
         // RECV
         // Receive the request
         if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
