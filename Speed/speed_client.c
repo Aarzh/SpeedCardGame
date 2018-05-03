@@ -67,14 +67,54 @@ void speedOperations(int connection_fd)
     char option = 'c';
     int status;
     operation_t operation;
+    char center_pile_1[3];
+    char center_pile_2[3];
+    char first_card[3];
+    char second_card[3];
+    char third_card[3];
+    char fourth_card[3];
+    char fifth_card[3];
 
+
+    printf("+----------------------------------+\n");
+    printf("| How to Play                      |\n");
     printf("+----------------------------------+\n");
     printf("| 1-5) Select Card #               |\n");
     printf("| 6) Exit program                  |\n");
     printf("+----------------------------------+\n");
 
+    // First wait until player 2 arrives
+    printf("Wait for oponent to connect..\n\n");
+
     while (option != 'x')
     {
+        printf("Testing.. Receiving cards from Server\n");
+        // Receive the cards
+
+        // RECV
+        // Receive the response
+        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) )
+        {
+            printf("Server closed the connection\n");
+            break;
+        }
+        //testing buffer
+        printf("Buffer:\n %s\n", buffer);
+        // Extract the data
+        sscanf(buffer, "%d %s %s %s %s %s %s %s", 
+                &status, center_pile_1, center_pile_2, 
+                first_card, second_card, third_card, fourth_card, fifth_card);
+
+        // Display cards to player
+        printf("+----------------------------------+\n");
+        printf("| Center Piles                     |\n");
+        printf("+----------------------------------+\n");
+        printf("              %s %s \n", center_pile_1, center_pile_2);
+        printf("+----------------------------------+\n");
+        printf("| Your Hand                        |\n");
+        printf("+----------------------------------+\n");
+        printf("          %s %s %s %s %s \n", first_card, second_card, third_card, fourth_card, fifth_card);
+        printf("+----------------------------------+\n");
         printf("Select an option: ");
         scanf(" %c", &option);
 
@@ -120,6 +160,7 @@ void speedOperations(int connection_fd)
         // Send the request
         sendString(connection_fd, buffer);
 
+        printf("Testing.. Receiving status from Server\n");
         // RECV
         // Receive the response
         if ( !recvString(connection_fd, buffer, BUFFER_SIZE) )
@@ -143,5 +184,9 @@ void speedOperations(int connection_fd)
                 printf("\tInvalid operation. Try again\n");
                 break;
         }
+
+        // SEND
+        // Send (this send avoids errors)
+        sendString(connection_fd, buffer);
     }
 }

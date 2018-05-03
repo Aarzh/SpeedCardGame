@@ -15,7 +15,7 @@
 #include <sys/poll.h>
 // Posix threads library
 #include <pthread.h>
-// Pretty Unicode Suits
+// Pretty Unicode Card Suits
 // #include <wchar.h>
 // #include <locale.h>
 
@@ -43,48 +43,24 @@ typedef struct card_struct {
     char rank[MAX_RANK_SIZE];
 } card_t;
 
-void setRank(card_t * card, int card_number) {
-    if(card_number == 1) {
-        strcpy(card->rank, "A\0");
-    } else if(card_number == 2) {
-        strcpy(card->rank, "2\0");
-    } else if(card_number == 3) {
-        strcpy(card->rank, "3\0");
-    } else if(card_number == 4) {
-        strcpy(card->rank, "4\0");
-    } else if(card_number == 5) {
-        strcpy(card->rank, "5\0");
-    } else if(card_number == 6) {
-        strcpy(card->rank, "6\0");
-    } else if(card_number == 7) {
-        strcpy(card->rank, "7\0");
-    } else if(card_number == 8) {
-        strcpy(card->rank, "8\0");
-    } else if(card_number == 9) {
-        strcpy(card->rank, "9\0");
-    } else if(card_number == 10) {
-        strcpy(card->rank, "10\0");
-    } else if(card_number == 11) {
-        strcpy(card->rank, "J\0");
-    } else if(card_number == 12) {
-        strcpy(card->rank, "Q\0");
-    } else if(card_number == 13) {
-        strcpy(card->rank, "K\0");
-    } 
-}
-
 // Structure for the player's data
 typedef struct player_struct {
+    // Players Hand
     card_t hand[PLAYER_HAND_SIZE];
-    card_t draw_pile[DRAW_PILE_SIZE];
+    // Players Draw Pile (how many cards left to win)
+    int draw_pile;
 } player_t;
 
 // Structure for the game's data
 typedef struct speed_struct {
+    // Store the number of players
+    int number_of_players;
     // A pointer to clients
-    player_t * players;
-    card_t center_pile_1[CENTER_PILE_SIZE];
-    card_t center_pile_2[CENTER_PILE_SIZE];
+    player_t players[NUM_CLIENTS];
+    // Two center piles
+    card_t center_pile_1;
+    card_t center_pile_2;
+    // Two replacement piles
     card_t replacement_pile_1[REPLACEMENT_PILE_SIZE];
     card_t replacement_pile_2[REPLACEMENT_PILE_SIZE];
 } speed_t;
@@ -93,7 +69,7 @@ typedef struct speed_struct {
 // Structure for the mutexes to keep the data consistent
 typedef struct locks_struct {
     // Mutex array
-    pthread_mutex_t * shared_pile;
+    pthread_mutex_t * center_pile_mutex;
 } locks_t;
 
 // Data that will be sent to each thread
@@ -124,12 +100,12 @@ void onInterrupt(int signal);
 //
 int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, int operation);
 // Cards Logic
+void setRank(card_t * card, int card_number);
 // void shufflePile(board_t * piles);
 // void randomize (board_t * pile);
 // void swap (card_t * a, card_t * b);
 
 ///// MAIN FUNCTION
-//SI SE HACE EL STRUCT METERLO COMO BANK_DATA
 int main(int argc, char * argv[])
 {
     int server_fd;
@@ -215,30 +191,42 @@ void setupHandlers()
 // HACEN FALTA CORRECCIONES DEPENDIENDO EL STRUCT
 void initSpeed(speed_t * speed_data, locks_t * data_locks)
 {
-    // // Set the number of transactions
-    // bank_data->total_transactions = 0;
+    // Initialize the number of players to zero
+    speed_data->number_of_players = 0;
 
-    // Allocate the arrays in the structures
-    // bank_data->account_array = malloc(NUM_ACCOUNTS * sizeof (account_t));
     // Allocate the arrays for the mutexes
-    data_locks->shared_pile = malloc(NUM_CLIENTS * sizeof (pthread_mutex_t));
-
-    // // Initialize the mutexes, using a different method for dynamically created ones
-    // //data_locks->transactions_mutex = PTHREAD_MUTEX_INITIALIZER;
-    // pthread_mutex_init(&data_locks->transactions_mutex, NULL);
+    data_locks->center_pile_mutex = malloc(NUM_CLIENTS * sizeof (pthread_mutex_t));
     
+    // Initializing mutex array to protect center piles for as many clients the program allows
     for (int i=0; i<NUM_CLIENTS; i++)
     {
         // Initializing mutex array using either of the following methods
-        // data_locks->shared_pile[i] = PTHREAD_MUTEX_INITIALIZER;
-        pthread_mutex_init(&data_locks->shared_pile[i], NULL);
+        // data_locks->center_pile_mutex[i] = PTHREAD_MUTEX_INITIALIZER;
+        pthread_mutex_init(&data_locks->center_pile_mutex[i], NULL);
     }
+
+    // Initialize players draw piles
+    speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
+    speed_data->players[1].draw_pile = DRAW_PILE_SIZE;
+
+    srand(time(NULL));
+
+    printf("Testing Initializing Random Cards...\n");
+    // Initialize cards with random numbers
+    for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
+    {
+        int random_number = rand() % 13 + 1;
+        setRank(&speed_data->players[0].hand[i], random_number);
+        setRank(&speed_data->players[1].hand[i], random_number);
+        printf("%s ", speed_data->players[0].hand[i].rank);
+    }
+    printf("\n");
+
 }
 
 /*
     Main loop to wait for incomming connections
 */
-//MISSING PLAYER STRUCT
 void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_locks)
 {
     struct sockaddr_in client_address;
@@ -328,9 +316,9 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
 */
 void * attentionThread(void * arg)
 {
-    printf("Hello from thread\n");
     // Receive the data for the bank, mutexes and socket file descriptor
     thread_data_t * connection_data = (thread_data_t *) arg;
+    printf("Player %d connected!\n", ++connection_data->speed_data->number_of_players);
 
     char buffer[BUFFER_SIZE];
     int operation = 0;
@@ -338,8 +326,22 @@ void * attentionThread(void * arg)
 
     // Loop to listen for messages from the client
     while(operation != EXIT && !isInterrupted) {
-        // RECV
-        // Receive the request
+        printf(" > Sending cards to Client\n");
+        // SEND
+        // Send the cards to player
+        // sprintf(buffer, "%d %s %s %s", 
+        //         0, 
+        //         connection_data->speed_data->center_pile_1[0].rank,
+        //         connection_data->speed_data->center_pile_2[0].rank,
+        //         connection_data->speed_data->players[connection_data->speed_data->number_of_players - 1].hand[0].rank
+        //         );
+        // Testing with hardcoded values
+        sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A\0", "10\0", "2\0", "4\0", "J\0", "9\0", "8\0");
+        sendString(connection_data->connection_fd, buffer);
+
+
+        // // RECV
+        // // Receive the request
         if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
         {
             printf("Client closed the connection\n");
@@ -355,13 +357,21 @@ void * attentionThread(void * arg)
         status = processOperation(connection_data->speed_data, connection_data->data_locks, buffer, operation);
 
         // Send a reply
-        printf(" > Sending to Client\n");
+        printf(" > Sending status to Client\n");
 
         // Prepare the response to the client
         sprintf(buffer, "%d", status);
         // SEND
         // Send the response
         sendString(connection_data->connection_fd, buffer);
+
+        // RECV
+        // Receive (this receive avoids errors)
+        if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
+        {
+            printf("Client closed the connection\n");
+            break;
+        }
     }
     
     // Free memory sent to this thread
@@ -373,14 +383,13 @@ void * attentionThread(void * arg)
 /*
     Free all the memory used for the bank data
 */
-//MISSING PLAYER STRUCT
-//HAY UN ERROR ACA
+// ADD FUTURE STRUCTS THAT YOU MALLOC'D
 void closeBoard(locks_t * data_locks)
 {
     printf("DEBUG: Clearing the memory for the thread\n");
     // Free all malloc'd data
     // free(bank_data->account_array);
-    free(data_locks->shared_pile);
+    free(data_locks->center_pile_mutex);
 }
 
 int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, int operation)
@@ -390,23 +399,18 @@ int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, 
     switch (operation)
     {
         case FIRST_CARD:
-        printf("Testing...\n");
         status = 0;
         break;
         case SECOND_CARD:
-        printf("Testing... Case \n");
         status = 0;
         break;
         case THIRD_CARD:
-        printf("Testing... Case \n");
         status = 0;
         break;
         case FOURTH_CARD:
-        printf("Testing... Case \n");
         status = 0;
         break;
         case FIFTH_CARD:
-        printf("Testing... Case \n");
         status = 0;
         break;
         case EXIT:
@@ -421,6 +425,36 @@ int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, 
     }
 
     return status;
+}
+
+void setRank(card_t * card, int card_number) {
+    if(card_number == 1) {
+        strcpy(card->rank, "A\0");
+    } else if(card_number == 2) {
+        strcpy(card->rank, "2\0");
+    } else if(card_number == 3) {
+        strcpy(card->rank, "3\0");
+    } else if(card_number == 4) {
+        strcpy(card->rank, "4\0");
+    } else if(card_number == 5) {
+        strcpy(card->rank, "5\0");
+    } else if(card_number == 6) {
+        strcpy(card->rank, "6\0");
+    } else if(card_number == 7) {
+        strcpy(card->rank, "7\0");
+    } else if(card_number == 8) {
+        strcpy(card->rank, "8\0");
+    } else if(card_number == 9) {
+        strcpy(card->rank, "9\0");
+    } else if(card_number == 10) {
+        strcpy(card->rank, "10\0");
+    } else if(card_number == 11) {
+        strcpy(card->rank, "J\0");
+    } else if(card_number == 12) {
+        strcpy(card->rank, "Q\0");
+    } else if(card_number == 13) {
+        strcpy(card->rank, "K\0");
+    } 
 }
 
 // void shufflePile(board_t * pile)
