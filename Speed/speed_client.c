@@ -67,13 +67,14 @@ void speedOperations(int connection_fd)
     char option = 'c';
     int status;
     operation_t operation;
-    char center_pile_1[2];
-    char center_pile_2[2];
-    char first_card[2];
-    char second_card[2];
-    char third_card[2];
-    char fourth_card[2];
-    char fifth_card[2];
+    char center_pile_1[3];
+    char center_pile_2[3];
+    char first_card[3];
+    char second_card[3];
+    char third_card[3];
+    char fourth_card[3];
+    char fifth_card[3];
+
 
     printf("+----------------------------------+\n");
     printf("| How to Play                      |\n");
@@ -87,7 +88,7 @@ void speedOperations(int connection_fd)
 
     while (option != 'x')
     {
-        printf("Testing.. Receiving from Server\n");
+        printf("Testing.. Receiving cards from Server\n");
         // Receive the cards
 
         // RECV
@@ -97,6 +98,8 @@ void speedOperations(int connection_fd)
             printf("Server closed the connection\n");
             break;
         }
+        //testing buffer
+        printf("Buffer:\n %s\n", buffer);
         // Extract the data
         sscanf(buffer, "%d %s %s %s %s %s %s %s", 
                 &status, center_pile_1, center_pile_2, 
@@ -157,6 +160,7 @@ void speedOperations(int connection_fd)
         // Send the request
         sendString(connection_fd, buffer);
 
+        printf("Testing.. Receiving status from Server\n");
         // RECV
         // Receive the response
         if ( !recvString(connection_fd, buffer, BUFFER_SIZE) )
@@ -180,5 +184,9 @@ void speedOperations(int connection_fd)
                 printf("\tInvalid operation. Try again\n");
                 break;
         }
+
+        // SEND
+        // Send (this send avoids errors)
+        sendString(connection_fd, buffer);
     }
 }

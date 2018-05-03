@@ -47,8 +47,8 @@ typedef struct card_struct {
 typedef struct player_struct {
     // Players Hand
     card_t hand[PLAYER_HAND_SIZE];
-    // Players Draw Pile
-    card_t draw_pile[DRAW_PILE_SIZE];
+    // Players Draw Pile (how many cards left to win)
+    int draw_pile;
 } player_t;
 
 // Structure for the game's data
@@ -56,10 +56,10 @@ typedef struct speed_struct {
     // Store the number of players
     int number_of_players;
     // A pointer to clients
-    player_t * players;
+    player_t players[NUM_CLIENTS];
     // Two center piles
-    card_t center_pile_1[CENTER_PILE_SIZE];
-    card_t center_pile_2[CENTER_PILE_SIZE];
+    card_t center_pile_1;
+    card_t center_pile_2;
     // Two replacement piles
     card_t replacement_pile_1[REPLACEMENT_PILE_SIZE];
     card_t replacement_pile_2[REPLACEMENT_PILE_SIZE];
@@ -204,6 +204,13 @@ void initSpeed(speed_t * speed_data, locks_t * data_locks)
         // data_locks->center_pile_mutex[i] = PTHREAD_MUTEX_INITIALIZER;
         pthread_mutex_init(&data_locks->center_pile_mutex[i], NULL);
     }
+
+    // Initialize players draw piles
+    speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
+    speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
+
+    // Initialize cards with random numbers
+
 }
 
 /*
@@ -308,7 +315,7 @@ void * attentionThread(void * arg)
 
     // Loop to listen for messages from the client
     while(operation != EXIT && !isInterrupted) {
-        printf("Testing.. > Sending to Client\n");
+        printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
         // sprintf(buffer, "%d %s %s %s", 
@@ -318,11 +325,12 @@ void * attentionThread(void * arg)
         //         connection_data->speed_data->players[connection_data->speed_data->number_of_players - 1].hand[0].rank
         //         );
         // Testing with hardcoded values
-        sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A", "10", "2", "4", "J", "9", "8");
+        sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A\0", "10\0", "2\0", "4\0", "J\0", "9\0", "8\0");
         sendString(connection_data->connection_fd, buffer);
 
-        // RECV
-        // Receive the request
+
+        // // RECV
+        // // Receive the request
         if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
         {
             printf("Client closed the connection\n");
@@ -338,13 +346,21 @@ void * attentionThread(void * arg)
         status = processOperation(connection_data->speed_data, connection_data->data_locks, buffer, operation);
 
         // Send a reply
-        printf(" > Sending to Client\n");
+        printf(" > Sending status to Client\n");
 
         // Prepare the response to the client
         sprintf(buffer, "%d", status);
         // SEND
         // Send the response
         sendString(connection_data->connection_fd, buffer);
+
+        // RECV
+        // Receive (this receive avoids errors)
+        if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
+        {
+            printf("Client closed the connection\n");
+            break;
+        }
     }
     
     // Free memory sent to this thread
@@ -372,23 +388,18 @@ int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, 
     switch (operation)
     {
         case FIRST_CARD:
-        printf("Testing...\n");
         status = 0;
         break;
         case SECOND_CARD:
-        printf("Testing... Case \n");
         status = 0;
         break;
         case THIRD_CARD:
-        printf("Testing... Case \n");
         status = 0;
         break;
         case FOURTH_CARD:
-        printf("Testing... Case \n");
         status = 0;
         break;
         case FIFTH_CARD:
-        printf("Testing... Case \n");
         status = 0;
         break;
         case EXIT:
