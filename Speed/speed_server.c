@@ -207,9 +207,20 @@ void initSpeed(speed_t * speed_data, locks_t * data_locks)
 
     // Initialize players draw piles
     speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
-    speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
+    speed_data->players[1].draw_pile = DRAW_PILE_SIZE;
 
+    srand(time(NULL));
+
+    printf("Testing Initializing Random Cards...\n");
     // Initialize cards with random numbers
+    for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
+    {
+        int random_number = rand() % 13 + 1;
+        setRank(&speed_data->players[0].hand[i], random_number);
+        setRank(&speed_data->players[1].hand[i], random_number);
+        printf("%s ", speed_data->players[0].hand[i].rank);
+    }
+    printf("\n");
 
 }
 
