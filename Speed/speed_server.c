@@ -101,6 +101,7 @@ void onInterrupt(int signal);
 int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, int operation);
 // Cards Logic
 void setRank(card_t * card, int card_number);
+void setCardsWithRandom(speed_t * speed_data);
 // void shufflePile(board_t * piles);
 // void randomize (board_t * pile);
 // void swap (card_t * a, card_t * b);
@@ -205,22 +206,7 @@ void initSpeed(speed_t * speed_data, locks_t * data_locks)
         pthread_mutex_init(&data_locks->center_pile_mutex[i], NULL);
     }
 
-    // Initialize players draw piles
-    speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
-    speed_data->players[1].draw_pile = DRAW_PILE_SIZE;
-
-    srand(time(NULL));
-
-    printf("Testing Initializing Random Cards...\n");
-    // Initialize cards with random numbers
-    for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
-    {
-        int random_number = rand() % 13 + 1;
-        setRank(&speed_data->players[0].hand[i], random_number);
-        setRank(&speed_data->players[1].hand[i], random_number);
-        printf("%s ", speed_data->players[0].hand[i].rank);
-    }
-    printf("\n");
+    
 
 }
 
@@ -320,6 +306,8 @@ void * attentionThread(void * arg)
     thread_data_t * connection_data = (thread_data_t *) arg;
     printf("Player %d connected!\n", ++connection_data->speed_data->number_of_players);
 
+    setCardsWithRandom(connection_data->speed_data);
+
     char buffer[BUFFER_SIZE];
     int operation = 0;
     int status;
@@ -329,14 +317,18 @@ void * attentionThread(void * arg)
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
-        // sprintf(buffer, "%d %s %s %s", 
-        //         0, 
-        //         connection_data->speed_data->center_pile_1[0].rank,
-        //         connection_data->speed_data->center_pile_2[0].rank,
-        //         connection_data->speed_data->players[connection_data->speed_data->number_of_players - 1].hand[0].rank
-        //         );
+        sprintf(buffer, "%d %s %s %s %s %s %s %s", 
+                0, 
+                connection_data->speed_data->center_pile_1.rank,
+                connection_data->speed_data->center_pile_2.rank,
+                connection_data->speed_data->players[0].hand[0].rank,
+                connection_data->speed_data->players[0].hand[1].rank,
+                connection_data->speed_data->players[0].hand[2].rank,
+                connection_data->speed_data->players[0].hand[3].rank,
+                connection_data->speed_data->players[0].hand[4].rank
+                );
         // Testing with hardcoded values
-        sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A\0", "10\0", "2\0", "4\0", "J\0", "9\0", "8\0");
+        // sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A\0", "10\0", "2\0", "4\0", "J\0", "9\0", "8\0");
         sendString(connection_data->connection_fd, buffer);
 
 
@@ -455,6 +447,29 @@ void setRank(card_t * card, int card_number) {
     } else if(card_number == 13) {
         strcpy(card->rank, "K\0");
     } 
+}
+
+void setCardsWithRandom(speed_t * speed_data) {
+    printf("Setting Cards With Random Numbers\n");
+    // Initialize players draw piles
+    speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
+    speed_data->players[1].draw_pile = DRAW_PILE_SIZE;
+
+    srand(time(NULL));
+
+    // Initialize center piles with random numbers
+    setRank(&speed_data->center_pile_1, rand() % 13 + 1);
+    setRank(&speed_data->center_pile_2, rand() % 13 + 1);
+
+    // Initialize cards with random numbers
+    for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
+    {
+        int random_number = rand() % 13 + 1;
+        setRank(&speed_data->players[0].hand[i], random_number);
+        setRank(&speed_data->players[1].hand[i], random_number);
+        printf("%s ", speed_data->players[0].hand[i].rank);
+    }
+    printf("\n");
 }
 
 // void shufflePile(board_t * pile)
