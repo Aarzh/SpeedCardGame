@@ -101,7 +101,8 @@ void onInterrupt(int signal);
 int processOperation(speed_t * speed_data, locks_t * data_locks, char * buffer, int operation);
 // Cards Logic
 void setRank(card_t * card, int card_number);
-void setCardsWithRandom(speed_t * speed_data);
+void setCenterPilesWithRandom(speed_t * speed_data);
+void setPlayerCardsWithRandom(speed_t * speed_data);
 // void shufflePile(board_t * piles);
 // void randomize (board_t * pile);
 // void swap (card_t * a, card_t * b);
@@ -206,7 +207,11 @@ void initSpeed(speed_t * speed_data, locks_t * data_locks)
         pthread_mutex_init(&data_locks->center_pile_mutex[i], NULL);
     }
 
-    
+    // Initialize players draw piles
+    speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
+    speed_data->players[1].draw_pile = DRAW_PILE_SIZE;
+
+    setCenterPilesWithRandom(speed_data);
 
 }
 
@@ -223,7 +228,7 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
     thread_data_t * connection_data = NULL;
     int status;
     int poll_response;
-	int timeout = 500;		// Time in milliseconds (0.5 seconds)
+    int timeout = 500;		// Time in milliseconds (0.5 seconds)
 
     // Get the size of the structure to store client information
     client_address_size = sizeof client_address;
@@ -236,6 +241,8 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
         // Fill in the structure
         test_fds[0].fd = server_fd;
         test_fds[0].events = POLLIN;    // Check for incomming data
+        // Testing
+        // printf("Testing... Number of Players: %d\n", speed_data->number_of_players);
         // Check if there is any incomming communication
         poll_response = poll(test_fds, 1, timeout);
 
@@ -257,44 +264,43 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
         {
             //printf("No response after %d seconds\n", timeout);
         }
-		// There is something ready at the socket
+    	// There is something ready at the socket
         else
         {
             // Check the type of event detected
             if (test_fds[0].revents & POLLIN)
             {
-				// ACCEPT
-				// Wait for a client connection
+    			// ACCEPT
+    			// Wait for a client connection
+                printf("Ready to accept\n");
                 client_fd = accept(server_fd, (struct sockaddr *)&client_address, &client_address_size);
                 if (client_fd == -1)
                 {
-                   fatalError("ERROR: accept");
-               }
+                    fatalError("ERROR: accept");
+                }
 
-				// Get the data from the client
-               inet_ntop(client_address.sin_family, &client_address.sin_addr, client_presentation, sizeof client_presentation);
-               printf("Received incomming connection from %s on port %d\n", client_presentation, client_address.sin_port);
+    			// Get the data from the client
+                inet_ntop(client_address.sin_family, &client_address.sin_addr, client_presentation, sizeof client_presentation);
+                printf("Received incomming connection from %s on port %d\n", client_presentation, client_address.sin_port);
 
-				// Prepare the structure to send to the thread
-               connection_data = malloc(sizeof (thread_data_t));
-               connection_data->connection_fd = client_fd;
-               connection_data->speed_data = speed_data;
-               connection_data->data_locks = data_locks;
+    			// Prepare the structure to send to the thread
+                connection_data = malloc(sizeof (thread_data_t));
+                connection_data->connection_fd = client_fd;
+                connection_data->speed_data = speed_data;
+                connection_data->data_locks = data_locks;
 
-				// CREATE A THREAD
-               status = pthread_create(&new_tid, NULL, attentionThread, (void *)connection_data);
-               if (status != 0)
-               {
-                perror("ERROR: pthread_create");
-                exit(EXIT_FAILURE);
+    			// CREATE A THREAD
+                status = pthread_create(&new_tid, NULL, attentionThread, (void *)connection_data);
+                if (status != 0)
+                {
+                    perror("ERROR: pthread_create");
+                    exit(EXIT_FAILURE);
+                }
+                printf("Thread created with ID: %ld\n", new_tid);
+
             }
-            printf("Thread created with ID: %ld\n", new_tid);
-
         }
     }
-}
-
-
 }
 
 /*
@@ -306,7 +312,7 @@ void * attentionThread(void * arg)
     thread_data_t * connection_data = (thread_data_t *) arg;
     printf("Player %d connected!\n", ++connection_data->speed_data->number_of_players);
 
-    setCardsWithRandom(connection_data->speed_data);
+    setPlayerCardsWithRandom(connection_data->speed_data);
 
     char buffer[BUFFER_SIZE];
     int operation = 0;
@@ -314,19 +320,22 @@ void * attentionThread(void * arg)
 
     // Loop to listen for messages from the client
     while(operation != EXIT && !isInterrupted) {
+        while(connection_data->speed_data->number_of_players < 2) {
+            printf("Waiting for oponent...\n");
+        }
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
         sprintf(buffer, "%d %s %s %s %s %s %s %s", 
-                0, 
-                connection_data->speed_data->center_pile_1.rank,
-                connection_data->speed_data->center_pile_2.rank,
-                connection_data->speed_data->players[0].hand[0].rank,
-                connection_data->speed_data->players[0].hand[1].rank,
-                connection_data->speed_data->players[0].hand[2].rank,
-                connection_data->speed_data->players[0].hand[3].rank,
-                connection_data->speed_data->players[0].hand[4].rank
-                );
+            0, 
+            connection_data->speed_data->center_pile_1.rank,
+            connection_data->speed_data->center_pile_2.rank,
+            connection_data->speed_data->players[0].hand[0].rank,
+            connection_data->speed_data->players[0].hand[1].rank,
+            connection_data->speed_data->players[0].hand[2].rank,
+            connection_data->speed_data->players[0].hand[3].rank,
+            connection_data->speed_data->players[0].hand[4].rank
+            );
         // Testing with hardcoded values
         // sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A\0", "10\0", "2\0", "4\0", "J\0", "9\0", "8\0");
         sendString(connection_data->connection_fd, buffer);
@@ -449,18 +458,17 @@ void setRank(card_t * card, int card_number) {
     } 
 }
 
-void setCardsWithRandom(speed_t * speed_data) {
-    printf("Setting Cards With Random Numbers\n");
-    // Initialize players draw piles
-    speed_data->players[0].draw_pile = DRAW_PILE_SIZE;
-    speed_data->players[1].draw_pile = DRAW_PILE_SIZE;
-
+void setCenterPilesWithRandom(speed_t * speed_data) {
+    printf("Setting Center Piles With Random Cards\n");
     srand(time(NULL));
-
     // Initialize center piles with random numbers
     setRank(&speed_data->center_pile_1, rand() % 13 + 1);
     setRank(&speed_data->center_pile_2, rand() % 13 + 1);
+}
 
+void setPlayerCardsWithRandom(speed_t * speed_data) {
+    printf("Setting Cards With Random Cards\n");
+    srand(time(NULL));
     // Initialize cards with random numbers
     for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
     {
