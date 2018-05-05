@@ -218,6 +218,7 @@ void initSpeed(speed_t * speed_data, locks_t * data_locks){
     Main loop to wait for incomming connections
 */
 void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_locks){
+
     struct sockaddr_in client_address;
     socklen_t client_address_size;
     char client_presentation[INET_ADDRSTRLEN];
@@ -247,7 +248,7 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
         if (poll_response == -1){
             // Test if the error was caused by an interruption
             if (errno == EINTR){
-                printf("\nPoll did not finish. The program was interrupted\n");
+                printf("\nThe program was interrupted\n");
             } else {
                 fatalError("ERROR: poll");
             }
@@ -286,7 +287,9 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
                     perror("ERROR: pthread_create");
                     exit(EXIT_FAILURE);
                 }
-                printf("Thread created with ID: %ld\n", new_tid);
+                long id = (long)new_tid; // Cast to long to avoid warnings
+
+                printf("Thread created with ID: %ld\n", id); // Print thread id
 
             }
         }
@@ -296,23 +299,30 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
 /*
     Hear the request from the client and send an answer
 */
-void * attentionThread(void * arg)
-{
+void * attentionThread(void * arg){
+
     // Receive the data for the bank, mutexes and socket file descriptor
     thread_data_t * connection_data = (thread_data_t *) arg;
+    printf("\n");
     printf("Player %d connected!\n", ++connection_data->speed_data->number_of_players);
+    printf("\n");
 
     setPlayerCardsWithRandom(connection_data->speed_data);
 
+    //int count = connection_data->speed_data->number_of_players;
     char buffer[BUFFER_SIZE];
     int operation = 0;
     int status;
 
     // Loop to listen for messages from the client
-    while(operation != EXIT && !isInterrupted) {
-        while(connection_data->speed_data->number_of_players < 2) {
-            printf("Waiting for oponent...\n");
-        }
+    while(operation != EXIT || !isInterrupted) {
+
+        // while(count < 2) {
+        //     printf("Waiting for oponent...\n");
+        //     if(isInterrupted == 1){
+        //         count = 1;
+        //     }
+        // }
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
@@ -343,7 +353,6 @@ void * attentionThread(void * arg)
 
         printf(" > Client requested operation '%d'\n", operation);
 
-
         // Process the request being careful of data consistency
         status = processOperation(connection_data->speed_data, connection_data->data_locks, buffer, operation);
 
@@ -369,6 +378,8 @@ void * attentionThread(void * arg)
     free(connection_data);
 
     pthread_exit(NULL);
+
+    exit(0);
 }
 
 /*
@@ -377,7 +388,6 @@ void * attentionThread(void * arg)
 // ADD FUTURE STRUCTS THAT YOU MALLOC'D
 void closeBoard(locks_t * data_locks)
 {
-    printf("DEBUG: Clearing the memory for the thread\n");
     // Free all malloc'd data
     // free(bank_data->account_array);
     free(data_locks->center_pile_mutex);
@@ -458,6 +468,7 @@ void setCenterPilesWithRandom(speed_t * speed_data) {
 
 void setPlayerCardsWithRandom(speed_t * speed_data) {
     printf("Setting Cards With Random Cards\n");
+    printf("\n");
     srand(time(NULL));
     // Initialize cards with random numbers
     for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
@@ -467,6 +478,7 @@ void setPlayerCardsWithRandom(speed_t * speed_data) {
         setRank(&speed_data->players[1].hand[i], random_number);
         printf("%s ", speed_data->players[0].hand[i].rank);
     }
+    printf("\n");
     printf("\n");
 }
 
