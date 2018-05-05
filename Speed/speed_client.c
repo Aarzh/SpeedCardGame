@@ -19,9 +19,14 @@
 
 #define BUFFER_SIZE 1024
 
+int exit_flag = 0; // exit flag starts as false
+int attending = 0;
+
 ///// FUNCTION DECLARATIONS
 void usage(char * program);
 void speedOperations(int connection_fd);
+void setupHandlers();
+void onInterrupt(int signal);
 
 ///// MAIN FUNCTION
 int main(int argc, char * argv[])
@@ -86,6 +91,8 @@ void speedOperations(int connection_fd)
     // First wait until player 2 arrives
     printf("Wait for oponent to connect..\n\n");
 
+    attending = 1;
+
     while (option != 'x')
     {
         printf("Testing.. Receiving cards from Server\n");
@@ -101,8 +108,8 @@ void speedOperations(int connection_fd)
         //testing buffer
         printf("Buffer:\n %s\n", buffer);
         // Extract the data
-        sscanf(buffer, "%d %s %s %s %s %s %s %s", 
-                &status, center_pile_1, center_pile_2, 
+        sscanf(buffer, "%d %s %s %s %s %s %s %s",
+                &status, center_pile_1, center_pile_2,
                 first_card, second_card, third_card, fourth_card, fifth_card);
 
         // Display cards to player
@@ -120,8 +127,7 @@ void speedOperations(int connection_fd)
 
         // Init variables to default values
 
-        switch(option)
-        {
+        switch(option){
             case '1':
                 operation = FIRST_CARD;
                 printf("First Card! Select a pile:\n");
@@ -145,6 +151,7 @@ void speedOperations(int connection_fd)
             case '6':
                 printf("Thanks for using the program. Bye!\n");
                 operation = EXIT;
+                exit(0);
                 break;
             // Incorrect option
             default:
@@ -160,7 +167,7 @@ void speedOperations(int connection_fd)
         // Send the request
         sendString(connection_fd, buffer);
 
-        printf("Testing.. Receiving status from Server\n");
+        //printf("Testing.. Receiving status from Server\n");
         // RECV
         // Receive the response
         if ( !recvString(connection_fd, buffer, BUFFER_SIZE) )
@@ -172,8 +179,7 @@ void speedOperations(int connection_fd)
         sscanf(buffer, "%d", &status);
 
         // Print the result
-        switch (status)
-        {
+        switch (status){
             case OK:
                 printf("\tTesting... SUCCESS!\n");
                 break;
