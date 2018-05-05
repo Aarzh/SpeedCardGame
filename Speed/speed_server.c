@@ -45,6 +45,7 @@ typedef struct card_struct {
 
 // Structure for the player's data
 typedef struct player_struct {
+    int index_position;
     // Players Hand
     card_t hand[PLAYER_HAND_SIZE];
     // Players Draw Pile (how many cards left to win)
@@ -261,9 +262,11 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
             // Check the type of event detected
             if (test_fds[0].revents & POLLIN)
             {
+                // Testing
+                // printf("Ready to accept\n");
+
     			// ACCEPT
     			// Wait for a client connection
-                printf("Ready to accept\n");
                 client_fd = accept(server_fd, (struct sockaddr *)&client_address, &client_address_size);
                 if (client_fd == -1)
                 {
@@ -303,26 +306,30 @@ void * attentionThread(void * arg){
 
     // Receive the data for the bank, mutexes and socket file descriptor
     thread_data_t * connection_data = (thread_data_t *) arg;
-    printf("\n");
-    printf("Player %d connected!\n", ++connection_data->speed_data->number_of_players);
-    printf("\n");
 
+    // Local variable to avoid using large structure+variable names
+    int * number_of_players = &connection_data->speed_data->number_of_players;
+    // Increment player counter by one
+    *number_of_players = *number_of_players + 1;
+    printf("Number of Players: %d\n", *(number_of_players));
+
+    // This function may be placed in the wrong line and might cause unwanted game behavior 
     setPlayerCardsWithRandom(connection_data->speed_data);
 
-    //int count = connection_data->speed_data->number_of_players;
     char buffer[BUFFER_SIZE];
     int operation = 0;
     int status;
 
     // Loop to listen for messages from the client
     while(operation != EXIT || !isInterrupted) {
+        // Wait for oponent before sending anything to client
+        while(*number_of_players < 2) {
+            // printf("waiting for oponent\n");
+            if(*number_of_players == 2) {
+                break;
+            }
+        }
 
-        // while(count < 2) {
-        //     printf("Waiting for oponent...\n");
-        //     if(isInterrupted == 1){
-        //         count = 1;
-        //     }
-        // }
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
@@ -330,11 +337,11 @@ void * attentionThread(void * arg){
             0,
             connection_data->speed_data->center_pile_1.rank,
             connection_data->speed_data->center_pile_2.rank,
-            connection_data->speed_data->players[0].hand[0].rank,
-            connection_data->speed_data->players[0].hand[1].rank,
-            connection_data->speed_data->players[0].hand[2].rank,
-            connection_data->speed_data->players[0].hand[3].rank,
-            connection_data->speed_data->players[0].hand[4].rank
+            connection_data->speed_data->players[*number_of_players - 1].hand[0].rank,
+            connection_data->speed_data->players[*number_of_players - 1].hand[1].rank,
+            connection_data->speed_data->players[*number_of_players - 1].hand[2].rank,
+            connection_data->speed_data->players[*number_of_players - 1].hand[3].rank,
+            connection_data->speed_data->players[*number_of_players - 1].hand[4].rank
             );
         // Testing with hardcoded values
         // sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A\0", "10\0", "2\0", "4\0", "J\0", "9\0", "8\0");
@@ -345,7 +352,8 @@ void * attentionThread(void * arg){
         // // Receive the request
         if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
         {
-            printf("Client closed the connection\n");
+            printf("Client closed the connection 1\n");
+            connection_data->speed_data->number_of_players--;
             break;
         }
         // Read the data from the socket message
@@ -369,9 +377,12 @@ void * attentionThread(void * arg){
         // Receive (this receive avoids errors)
         if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
         {
-            printf("Client closed the connection\n");
+            printf("Client closed the connection 2\n");
             break;
         }
+        
+        
+        
     }
 
     // Free memory sent to this thread
@@ -459,7 +470,7 @@ void setRank(card_t * card, int card_number) {
 }
 
 void setCenterPilesWithRandom(speed_t * speed_data) {
-    printf("Setting Center Piles With Random Cards\n");
+    //printf("Setting Center Piles With Random Cards\n");
     srand(time(NULL));
     // Initialize center piles with random numbers
     setRank(&speed_data->center_pile_1, rand() % 13 + 1);
