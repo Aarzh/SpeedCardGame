@@ -45,7 +45,7 @@ typedef struct card_struct {
 
 // Structure for the player's data
 typedef struct player_struct {
-    int index_position;
+    //int index_position;
     // Players Hand
     card_t hand[PLAYER_HAND_SIZE];
     // Players Draw Pile (how many cards left to win)
@@ -229,6 +229,7 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
     int status;
     int poll_response;
     int timeout = 500;		// Time in milliseconds (0.5 seconds)
+    int index = 0;
 
     // Get the size of the structure to store client information
     client_address_size = sizeof client_address;
@@ -242,6 +243,10 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
         test_fds[0].events = POLLIN;    // Check for incomming data
         // Testing
         // printf("Testing... Number of Players: %d\n", speed_data->number_of_players);
+
+        // Random seed in a loop for better randomness
+        srand(time(NULL));
+        
         // Check if there is any incomming communication
         poll_response = poll(test_fds, 1, timeout);
 
@@ -283,6 +288,9 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
                 connection_data->speed_data = speed_data;
                 connection_data->data_locks = data_locks;
 
+                
+                printf("index: %d\n", index);
+
     			// CREATE A THREAD
                 status = pthread_create(&new_tid, NULL, attentionThread, (void *)connection_data);
                 if (status != 0)
@@ -293,7 +301,7 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
                 long id = (long)new_tid; // Cast to long to avoid warnings
 
                 printf("Thread created with ID: %ld\n", id); // Print thread id
-
+                index++;
             }
         }
     }
@@ -313,7 +321,8 @@ void * attentionThread(void * arg){
     *number_of_players = *number_of_players + 1;
     printf("Number of Players: %d\n", *(number_of_players));
 
-    // This function may be placed in the wrong line and might cause unwanted game behavior 
+
+    // Note: don't know if this function may be placed in the wrong line and might cause unwanted game behavior 
     setPlayerCardsWithRandom(connection_data->speed_data);
 
     char buffer[BUFFER_SIZE];
@@ -354,6 +363,7 @@ void * attentionThread(void * arg){
         {
             printf("Client closed the connection 1\n");
             connection_data->speed_data->number_of_players--;
+            if(connection_data->speed_data)
             break;
         }
         // Read the data from the socket message
@@ -471,7 +481,7 @@ void setRank(card_t * card, int card_number) {
 
 void setCenterPilesWithRandom(speed_t * speed_data) {
     //printf("Setting Center Piles With Random Cards\n");
-    srand(time(NULL));
+    // srand(time(NULL));
     // Initialize center piles with random numbers
     setRank(&speed_data->center_pile_1, rand() % 13 + 1);
     setRank(&speed_data->center_pile_2, rand() % 13 + 1);
@@ -480,7 +490,7 @@ void setCenterPilesWithRandom(speed_t * speed_data) {
 void setPlayerCardsWithRandom(speed_t * speed_data) {
     printf("Setting Cards With Random Cards\n");
     printf("\n");
-    srand(time(NULL));
+    //srand(time(NULL));
     // Initialize cards with random numbers
     for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
     {
