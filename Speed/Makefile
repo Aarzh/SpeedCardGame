@@ -33,7 +33,7 @@ LDLIBS = -lpthread
 #   $<  = The first required file of the rule
 
 # Default rule
-all: $(CLIENT) $(SERVER) $(TEST)
+all: $(CLIENT) $(SERVER) $(AUTO_CLIENT) $(TEST)
 
 # Rule to make the client program
 $(CLIENT): $(CLIENT).o $(OBJECTS)
