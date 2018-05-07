@@ -21,8 +21,13 @@
 
 typedef struct automatic_game_struct{
     char card;
+<<<<<<< HEAD
     int pile
 }automatic_t;
+=======
+    int pile;
+} automatic_t;
+>>>>>>> 4c848721612092cafadd1b5f28754de0bbf8ac5f
 
 int exit_flag = 0; // exit flag starts as false
 int attending = 0;
@@ -220,7 +225,11 @@ void speedOperations(int connection_fd)
 automatic_t * play(char buffer[BUFFER_SIZE]){
     int verify = 0;
     int i = 3;
+<<<<<<< HEAD
     automatic_t * operation;
+=======
+    automatic_t * operation = malloc(sizeof(*operation));
+>>>>>>> 4c848721612092cafadd1b5f28754de0bbf8ac5f
     while(verify != 1){
         if(buffer[1] - buffer[i] == 1 || buffer[1] - buffer[i] == -1){
             operation->card = buffer[i];
@@ -238,4 +247,8 @@ automatic_t * play(char buffer[BUFFER_SIZE]){
             i++;
         }
     }
+<<<<<<< HEAD
+=======
+    return operation;
+>>>>>>> 4c848721612092cafadd1b5f28754de0bbf8ac5f
 }

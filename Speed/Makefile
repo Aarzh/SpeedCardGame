@@ -11,10 +11,15 @@ CLIENT = speed_client
 #CLIENT = pi_client
 SERVER = speed_server
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 #automatic client
 AUTO_CLIENT = speed_automatic_client
 >>>>>>> a8e9de47a1d825b6c15af60e709917b37d4ff676
+=======
+#automatic client
+AUTO_CLIENT = speed_automatic_client
+>>>>>>> 4c848721612092cafadd1b5f28754de0bbf8ac5f
 
 ### Variables for the compilation rules ###
 # These should work for most projects, but can be modified when necessary

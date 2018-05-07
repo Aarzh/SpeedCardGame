@@ -534,11 +534,18 @@ void setPlayerCardsWithRandom(speed_t * speed_data) {
 
 void verify_cards(thread_data_t * board, int player_num, int card, int pile){
 
+<<<<<<< HEAD
     if(pile == board->speed_data->center_pile_1.rank_number){
         if(board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == 1 ||
+=======
+    if(pile == 1){
+        printf("operation %d - %d", board->speed_data->players[player_num].hand[card].rank_number, board->speed_data->center_pile_1.rank_number);
+        if(board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == 1 || 
+>>>>>>> 4c848721612092cafadd1b5f28754de0bbf8ac5f
         board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == -1){
             pthread_mutex_lock(&board->data_locks->center_pile_mutex[0]);
             setRank(&board->speed_data->center_pile_1, board->speed_data->players[player_num].hand[card].rank_number);
+            board->speed_data->center_pile_1.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
             //board->speed_data->center_pile_1.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
             pthread_mutex_unlock(&board->data_locks->center_pile_mutex[0]);
         }else{
@@ -550,6 +557,7 @@ void verify_cards(thread_data_t * board, int player_num, int card, int pile){
         board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_2.rank_number == -1){
             pthread_mutex_lock(&board->data_locks->center_pile_mutex[1]);
             setRank(&board->speed_data->center_pile_2, board->speed_data->players[player_num].hand[card].rank_number);
+            board->speed_data->center_pile_2.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
             //board->speed_data->center_pile_2.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
             pthread_mutex_unlock(&board->data_locks->center_pile_mutex[1]);
         }else{
