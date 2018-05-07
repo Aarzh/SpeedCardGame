@@ -39,6 +39,10 @@ all: $(CLIENT) $(SERVER) $(TEST)
 $(CLIENT): $(CLIENT).o $(OBJECTS)
 	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 
+# Rule to make the automatic client program
+$(AUTO_CLIENT): $(AUTO_CLIENT).o $(OBJECTS)
+	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
+
 # Rule to make the server program
 $(SERVER): $(SERVER).o $(OBJECTS)
 	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
