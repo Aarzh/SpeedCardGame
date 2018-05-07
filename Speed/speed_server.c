@@ -43,7 +43,7 @@ typedef struct card_struct {
     char rank[MAX_RANK_SIZE];
     int rank_number;
 } card_t;
-
+    
 // Structure for the player's data
 typedef struct player_struct {
     // Players Hand
@@ -59,8 +59,7 @@ typedef struct speed_struct {
     // A pointer to clients
     player_t players[NUM_CLIENTS];
     // Two center piles
-    card_t center_pile_1;
-    card_t center_pile_2;
+    card_t center_pile[2];
     // Two replacement piles
     card_t replacement_pile_1[REPLACEMENT_PILE_SIZE];
     card_t replacement_pile_2[REPLACEMENT_PILE_SIZE];
@@ -108,6 +107,7 @@ void setCenterPilesWithRandom(speed_t * speed_data);
 void setPlayerCardsWithRandom(speed_t * speed_data);
 void verify_cards(thread_data_t * board, int player_num, int card, card_t pile);
 int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
+void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
 // void shufflePile(board_t * piles);
 // void randomize (board_t * pile);
 // void swap (card_t * a, card_t * b);
@@ -321,9 +321,9 @@ void * attentionThread(void * arg){
     int * number_of_players = &connection_data->speed_data->number_of_players;
     // Increment player counter by one
     *number_of_players = *number_of_players + 1;
-    printf("Number of Players: %d\n", *(number_of_players));
+    // printf("Number of Players: %d\n", *(number_of_players));
     // Testing
-    printf("I will be working at players[%d] index position\n", connection_data->index_position);
+    // printf("I will be working at players[%d] index position\n", connection_data->index_position);
 
 
     // Note: don't know if this function may be placed in the wrong line and might cause unwanted game behavior 
@@ -336,7 +336,7 @@ void * attentionThread(void * arg){
 
     // Loop to listen for messages from the client
     while(operation != EXIT || !isInterrupted) {
-        printf("The client fd is: %d\n the fixed index position: %d", connection_data->connection_fd, connection_data->index_position);
+        //printf("The client fd is: %d\n the fixed index position: %d\n", connection_data->connection_fd, connection_data->index_position);
 
         // Wait for oponent before sending anything to client
         while(*number_of_players < 2) {
@@ -351,8 +351,8 @@ void * attentionThread(void * arg){
         // Send the cards to player
         sprintf(buffer, "%d %s %s %s %s %s %s %s",
             0,
-            connection_data->speed_data->center_pile_1.rank,
-            connection_data->speed_data->center_pile_2.rank,
+            connection_data->speed_data->center_pile[0].rank,
+            connection_data->speed_data->center_pile[1].rank,
             connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
             connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
             connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
@@ -430,23 +430,44 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
     {
         case FIRST_CARD:
         //validate
-        // if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) 
-        // modify cards
-        // placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, FIRST_CARD, center_pile_number);
+        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) {
+            // modify cards
+            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number);
+        }
         status = 0;
         break;
         case SECOND_CARD:
+        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number)) {
+            // modify cards
+            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number);
+        }
+
         status = 0;
         break;
         case THIRD_CARD:
+        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number)) {
+            // modify cards
+            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number);
+        }
+
         // verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
         status = 0;
         break;
         case FOURTH_CARD:
+        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number)) {
+            // modify cards
+            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number);
+        }
+
         // verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
         status = 0;
         break;
         case FIFTH_CARD:
+        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number)) {
+            // modify cards
+            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number);
+        }
+
         // verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
         status = 0;
         break;
@@ -501,13 +522,13 @@ void setCenterPilesWithRandom(speed_t * speed_data) {
     int random_center_pile_1 = rand() % 13 + 1;
     int random_center_pile_2 = rand() % 13 + 1;
     // Setting Rank Number Integer
-    speed_data->center_pile_1.rank_number = random_center_pile_1;
-    speed_data->center_pile_2.rank_number = random_center_pile_2;
+    speed_data->center_pile[0].rank_number = random_center_pile_1;
+    speed_data->center_pile[1].rank_number = random_center_pile_2;
     // Setting rank strings
-    setRank(&speed_data->center_pile_1, random_center_pile_1);
-    setRank(&speed_data->center_pile_2, random_center_pile_2);
+    setRank(&speed_data->center_pile[0], random_center_pile_1);
+    setRank(&speed_data->center_pile[1], random_center_pile_2);
     // Testing 
-    printf("%s %s\n", speed_data->center_pile_1.rank, speed_data->center_pile_2.rank);
+    printf("%s %s\n", speed_data->center_pile[0].rank, speed_data->center_pile[1].rank);
 }
 
 void setPlayerCardsWithRandom(speed_t * speed_data) {
@@ -536,20 +557,45 @@ void setPlayerCardsWithRandom(speed_t * speed_data) {
 int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
     
     // if center pile at center pile number is equal to player[indexpos].hand[card selected]
-    if(center_pile_number == 1) { // Validate using center_pile_number
-        // Ace special case
-        if(speed_data->center_pile_1.rank_number == 1) {
-
-        } else if(speed_data->center_pile_1.rank_number == 1010101) { // King special case
-
+    if(speed_data->center_pile[center_pile_number-1].rank_number == 1) 
+    { // Ace special case
+        if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -12 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -1) {
+            printf("Testing... ace case success\n");
+            return 1;
         } else {
-
+            return 0;
+        } 
+    } 
+    else if(speed_data->center_pile[center_pile_number-1].rank_number == 13) 
+    { // King special case
+        if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 12 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 1) {
+            printf("Testing... king case success\n");
+            return 1;
+        } else {
+            return 0;
+        } 
+    } 
+    else 
+    {
+        if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 1 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -1) {
+            printf("Testing... any case success\n");
+            return 1;
+        } else {
+            return 0;
         }
-        
-        if(speed_data->center_pile_1.rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) {
+    }     
+}
 
-        }        
-    }
+void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
+    // Placing chosen card in the center pile
+    speed_data->center_pile[center_pile_number-1].rank_number = speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number;
+    // Setting Rank String
+    setRank(&speed_data->center_pile[center_pile_number-1],speed_data->center_pile[center_pile_number].rank_number);
+    // Assigning new random value to the player hand
+    srand(time(NULL));
+    int new_random = rand() % 13 + 1;
+    speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number = new_random;
+    setRank(&speed_data->players[players_index_position].hand[card_selected_hand_index], new_random);
 }
 
 // void verify_cards(thread_data_t * board, int player_num, int card, card_t pile){
@@ -578,61 +624,3 @@ int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_in
 //     }
 // }
 
-
-// void shufflePile(board_t * pile)
-// {
-//     for(int i = 0; i<PILE_CENTER; i++){
-//         for(int j = 0; j<PILE_CENTER; j++){
-//             if(pile->pile_centerL[i] != 0 && pile->pile_centerR[j] == 0){
-//                 pile->pile_centerR[j] = pile->pile_centerL[i];
-//             }else if(pile->pile_centerL[i] == 0 && pile->pile_centerR[j] == 0){
-//                 i++;
-//             }else if(pile->pile_centerL[i] != 0 && pile->pile_centerR[j] != 0){
-//                 j++;
-//             }else{//cuando L no tiene y R si
-//                 ++i;
-//                 j++;
-//             }
-//         }
-//     }
-//     randomize(pile);
-//     for(int i = 0; i<PILE_CENTER/2; i++){
-//         for(int j = 0; j<PILE_CENTER/2; j++){
-//             if(pile->pile_centerR[i] != 0 && pile->pile_centerL[j] == 0){
-//                 pile->pile_centerL[j] = pile->pile_centerR[i];
-//             }else if(pile->pile_centerL[i] == 0 && pile->pile_centerR[j] == 0){
-//                 j++;
-//             }else if(pile->pile_centerL[i] != 0 && pile->pile_centerR[j] != 0){
-//                 i++;
-//             }else{
-//                 ++j;
-//             }
-//         }
-//     }
-// }
-
-
-// void swap (card_t * a, card_t * b)
-// {
-//     card_t temp = *a;
-//     *a = *b;
-//     *b = temp;
-// }
-
-// void randomize (board_t * pile )
-// {
-//     // Use a different seed value so that we don't get same
-//     // result each time we run this program
-//     srand ( time(NULL) );
-
-//     // Start from the last element and swap one by one. We don't
-//     // need to run for the first element that's why i > 0
-//     for (int i = PILE_CENTER; i > 0; i--)
-//     {
-//         // Pick a random index from 0 to i
-//         int j = rand() % (i+1);
-
-//         // Swap arr[i] with the element at random index
-//         swap(&pile->pile_centerR[i], &pile->pile_centerR[j]);
-//     }
-// }
