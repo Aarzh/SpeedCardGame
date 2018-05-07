@@ -10,6 +10,8 @@ DEPENDS = fatal_error.h sockets.h speed_codes.h
 CLIENT = speed_client
 #CLIENT = pi_client
 SERVER = speed_server
+#automatic client
+AUTO_CLIENT = speed_automatic_client
 
 ### Variables for the compilation rules ###
 # These should work for most projects, but can be modified when necessary
