@@ -156,8 +156,7 @@ void speedOperations(int connection_fd)
                 operation = FIFTH_CARD;
                 break;
             case '6':
-                printf("Request sended\n");
-                scanf("%d", &center_pile_number);
+                printf("I'm stuck!\n");
                 operation = SHUFFLE;
                 break;
             case '7':

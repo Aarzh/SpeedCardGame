@@ -487,6 +487,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
         break;
         case EXIT:
         status = BYE;
+        break;
         // Invalid message
         default:
             // Print an error locally
@@ -603,10 +604,12 @@ int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_in
 void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
     // Mutex protect center pile
     // pthread_mutex_lock(&data_locks->center_pile_mutex[center_pile_number-1]);
-    // Setting Rank String
+    // Changing Center Pile Rank String
     setRank(&speed_data->center_pile[center_pile_number-1], speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number);
     // Placing chosen card in the center pile
     speed_data->center_pile[center_pile_number-1].rank_number = speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number;
+    // pthread_mutex_lock(&data_locks->center_pile_mutex[center_pile_number-1]);
+
     // Assigning new random value to the player hand
     srand(time(NULL));
     int new_random = rand() % 13 + 1;
