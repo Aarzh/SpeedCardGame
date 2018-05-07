@@ -19,6 +19,11 @@
 
 #define BUFFER_SIZE 1024
 
+typedef struct automatic_game_struct{
+    char card;
+    int pile;
+} automatic_t;
+
 int exit_flag = 0; // exit flag starts as false
 int attending = 0;
 
@@ -27,6 +32,7 @@ void usage(char * program);
 void speedOperations(int connection_fd);
 void setupHandlers();
 void onInterrupt(int signal);
+automatic_t * play(char buffer[BUFFER_SIZE]);
 
 ///// MAIN FUNCTION
 int main(int argc, char * argv[])
@@ -80,6 +86,7 @@ void speedOperations(int connection_fd)
     char third_card[3];
     char fourth_card[3];
     char fifth_card[3];
+    automatic_t * selection;
 
 
     printf("+----------------------------------+\n");
@@ -124,11 +131,12 @@ void speedOperations(int connection_fd)
         printf("+----------------------------------+\n");
         printf("          %s %s %s %s %s \n", first_card, second_card, third_card, fourth_card, fifth_card);
         printf("+----------------------------------+\n");
-        printf("Select an option: ");
-        scanf(" %c", &option);
-
+        //printf("Select an option: ");
+        //scanf(" %c", &option);
+        selection = play(buffer);
+        selection->card = option;
+        selection->pile = center_pile_number;
         // Init variables to default values
-
         switch(option){
             case '1':
                 operation = FIRST_CARD;
@@ -207,4 +215,28 @@ void speedOperations(int connection_fd)
         // Send (this send avoids errors)
         sendString(connection_fd, buffer);
     }
+}
+
+automatic_t * play(char buffer[BUFFER_SIZE]){
+    int verify = 0;
+    int i = 3;
+    automatic_t * operation = malloc(sizeof(*operation));
+    while(verify != 1){
+        if(buffer[1] - buffer[i] == 1 || buffer[1] - buffer[i] == -1){
+            operation->card = buffer[i];
+            operation->pile = 1;
+            return operation;
+        }else if(buffer[2] - buffer[i] == 1 || buffer[1] - buffer[i] == -1){
+            operation->card = buffer[i];
+            operation->pile = 1;
+            return operation;
+        }else if(i == 8){
+            operation->card = '6';
+            operation->pile = 0;
+            return operation;
+        }else{
+            i++;
+        }
+    }
+    return operation;
 }
