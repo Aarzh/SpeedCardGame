@@ -29,8 +29,7 @@ void setupHandlers();
 void onInterrupt(int signal);
 
 ///// MAIN FUNCTION
-int main(int argc, char * argv[])
-{
+int main(int argc, char * argv[]){
     int connection_fd;
 
     printf("\n=== SPEED CARD GAME ===\n");
@@ -56,8 +55,7 @@ int main(int argc, char * argv[])
 /*
     Explanation to the user of the parameters required to run the program
 */
-void usage(char * program)
-{
+void usage(char * program){
     printf("Usage:\n");
     printf("\t%s {server_address} {port_number}\n", program);
     exit(EXIT_FAILURE);
@@ -66,8 +64,7 @@ void usage(char * program)
 /*
     Main menu with the options available to the user
 */
-void speedOperations(int connection_fd)
-{
+void speedOperations(int connection_fd){
     char buffer[BUFFER_SIZE];
     char option = 'c';
     int status;
@@ -86,7 +83,7 @@ void speedOperations(int connection_fd)
     printf("| How to Play                      |\n");
     printf("+----------------------------------+\n");
     printf("| 1-5) Select Card #               |\n");
-    printf("| 6) Shuffle center piles          |\n");
+    printf("| 6) I am stuck                    |\n");
     printf("| 7) Exit program                  |\n");
     printf("+----------------------------------+\n");
 
@@ -95,24 +92,20 @@ void speedOperations(int connection_fd)
 
     attending = 1;
 
-    while (option != 'x')
-    {
+    while (option != 'x'){
         printf("Testing.. Receiving cards from Server\n");
         // Receive the cards
 
         // RECV
         // Receive the response
-        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) )
-        {
+        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) ){
             printf("Server closed the connection\n");
             break;
         }
         //testing buffer
         printf("Buffer:\n %s\n", buffer);
         // Extract the data
-        sscanf(buffer, "%d %s %s %s %s %s %s %s",
-                &status, center_pile_1, center_pile_2,
-                first_card, second_card, third_card, fourth_card, fifth_card);
+        sscanf(buffer, "%d %s %s %s %s %s %s %s", &status, center_pile_1, center_pile_2, first_card, second_card, third_card, fourth_card, fifth_card);
 
         // Display cards to player
         printf("+----------------------------------+\n");
@@ -124,53 +117,66 @@ void speedOperations(int connection_fd)
         printf("+----------------------------------+\n");
         printf("          %s %s %s %s %s \n", first_card, second_card, third_card, fourth_card, fifth_card);
         printf("+----------------------------------+\n");
-        printf("Select an option: ");
-        scanf(" %c", &option);
 
+        int breakFromLoop = 1;
         // Init variables to default values
+        while(breakFromLoop){
 
-        switch(option){
-            case '1':
-                operation = FIRST_CARD;
-                printf("First Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
-                break;
-            case '2':
-                operation = SECOND_CARD;
-                printf("Second Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
-                break;
-            case '3':
-                operation = THIRD_CARD;
-                printf("Third Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
-                break;
-            case '4':
-                printf("Fourth Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
-                operation = FOURTH_CARD;
-                break;
-            case '5':
-                printf("Fifth Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
-                operation = FIFTH_CARD;
-                break;
-            case '6':
-                printf("I'm stuck!\n");
-                operation = SHUFFLE;
-                break;
-            case '7':
-                printf("Thanks for using the program. Bye!\n");
-                operation = EXIT;
-                exit(0);
-                break;
-            // Incorrect option
-            default:
-                printf("Invalid option. Try again ...\n");
-                // Skip the rest of the code in the while
-                continue;
+            printf("Select an option: ");
+            scanf(" %c", &option);
+
+            switch(option){
+                case '1':
+                    operation = FIRST_CARD;
+                    printf("First Card! Select a pile (1/2): ");
+                    scanf("%d", &center_pile_number);
+                    breakFromLoop = 0;
+                    break;
+                case '2':
+                    operation = SECOND_CARD;
+                    printf("Second Card! Select a pile (1/2): ");
+                    scanf("%d", &center_pile_number);
+                    breakFromLoop = 0;
+                    break;
+                case '3':
+                    operation = THIRD_CARD;
+                    printf("Third Card! Select a pile (1/2): ");
+                    scanf("%d", &center_pile_number);
+                    breakFromLoop = 0;
+                    break;
+                case '4':
+                    printf("Fourth Card! Select a pile (1/2): ");
+                    scanf("%d", &center_pile_number);
+                    operation = FOURTH_CARD;
+                    breakFromLoop = 0;
+                    break;
+                case '5':
+                    printf("Fifth Card! Select a pile (1/2): ");
+                    scanf("%d", &center_pile_number);
+                    operation = FIFTH_CARD;
+                    breakFromLoop = 0;
+                    break;
+                case '6':
+                    printf("I'm stuck!\n");
+                    operation = SHUFFLE;
+                    breakFromLoop = 0;
+                    break;
+                case '7':
+                    printf("Thanks for using the program. Bye!\n");
+                    operation = EXIT;
+                    exit(0);
+                    breakFromLoop = 0;
+                    break;
+                // Incorrect option
+                default:
+                    printf("----> Invalid option. Try again ...\n");
+                    printf("\n");
+                    breakFromLoop = 1;
+                    // Skip the rest of the code in the while
+                    continue;
+            }
         }
-
+        printf(" > Sending to Server\n");
         // Prepare the message to the server
         sprintf(buffer, "%d %d", operation, center_pile_number);
 
@@ -178,11 +184,10 @@ void speedOperations(int connection_fd)
         // Send the request
         sendString(connection_fd, buffer);
 
-        //printf("Testing.. Receiving status from Server\n");
+        printf(" > Receiving status from Server\n");
         // RECV
         // Receive the response
-        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) )
-        {
+        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) ){
             printf("Server closed the connection\n");
             break;
         }
