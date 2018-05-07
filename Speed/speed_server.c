@@ -2,7 +2,7 @@
     Speed Project
     Aaron Zajac, Eugenio Leal, Mauricio Rico
 */
-
+// TODO: 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +46,6 @@ typedef struct card_struct {
 
 // Structure for the player's data
 typedef struct player_struct {
-    //int index_position;
     // Players Hand
     card_t hand[PLAYER_HAND_SIZE];
     // Players Draw Pile (how many cards left to win)
@@ -76,6 +75,8 @@ typedef struct locks_struct {
 
 // Data that will be sent to each thread
 typedef struct data_struct {
+    // Fixed index position in the speed_data->players array for each thread
+    int index_position;
     // The file descriptor for the socket
     int connection_fd;
     // A pointer to the speed data structure
@@ -95,7 +96,7 @@ void usage(char * program);
 void initSpeed(speed_t * speed_data, locks_t * data_locks);
 void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_locks);
 void * attentionThread(void * arg);
-void closeBoard(locks_t * data_locks);
+void closeSpeed(locks_t * data_locks);
 // Signals
 void setupHandlers();
 void onInterrupt(int signal);
@@ -141,7 +142,7 @@ int main(int argc, char * argv[])
     close(server_fd);
 
     // Clean the memory used
-    closeBoard(&data_locks);
+    closeSpeed(&data_locks);
 
     // Finish the main thread
     pthread_exit(NULL);
@@ -231,7 +232,7 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
     int status;
     int poll_response;
     int timeout = 500;      // Time in milliseconds (0.5 seconds)
-    int index = 0;
+    
 
     // Get the size of the structure to store client information
     client_address_size = sizeof client_address;
@@ -269,8 +270,6 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
             // Check the type of event detected
             if (test_fds[0].revents & POLLIN)
             {
-                // Testing
-                // printf("Ready to accept\n");
 
                 // ACCEPT
                 // Wait for a client connection
@@ -289,9 +288,10 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
                 connection_data->connection_fd = client_fd;
                 connection_data->speed_data = speed_data;
                 connection_data->data_locks = data_locks;
+                // printf("the index position should be: %d\n", speed_data->number_of_players);
+                connection_data->index_position = speed_data->number_of_players;
 
                 
-                printf("index: %d\n", index);
 
                 // CREATE A THREAD
                 status = pthread_create(&new_tid, NULL, attentionThread, (void *)connection_data);
@@ -303,7 +303,6 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
                 long id = (long)new_tid; // Cast to long to avoid warnings
 
                 printf("Thread created with ID: %ld\n", id); // Print thread id
-                index++;
             }
         }
     }
@@ -317,11 +316,13 @@ void * attentionThread(void * arg){
     // Receive the data for the bank, mutexes and socket file descriptor
     thread_data_t * connection_data = (thread_data_t *) arg;
 
-    // Local variable to avoid using large structure+variable names
+    // Local variable to avoid using large structure/variable names
     int * number_of_players = &connection_data->speed_data->number_of_players;
     // Increment player counter by one
     *number_of_players = *number_of_players + 1;
     printf("Number of Players: %d\n", *(number_of_players));
+    // Testing
+    printf("I will be working at players[%d] index position\n", connection_data->index_position);
 
 
     // Note: don't know if this function may be placed in the wrong line and might cause unwanted game behavior 
@@ -329,10 +330,13 @@ void * attentionThread(void * arg){
 
     char buffer[BUFFER_SIZE];
     int operation = 0;
+    int center_pile_number;
     int status;
 
     // Loop to listen for messages from the client
     while(operation != EXIT || !isInterrupted) {
+        printf("The client fd is: %d\n the fixed index position: %d", connection_data->connection_fd, connection_data->index_position);
+
         // Wait for oponent before sending anything to client
         while(*number_of_players < 2) {
             // printf("waiting for oponent\n");
@@ -348,11 +352,11 @@ void * attentionThread(void * arg){
             0,
             connection_data->speed_data->center_pile_1.rank,
             connection_data->speed_data->center_pile_2.rank,
-            connection_data->speed_data->players[*number_of_players - 1].hand[0].rank,
-            connection_data->speed_data->players[*number_of_players - 1].hand[1].rank,
-            connection_data->speed_data->players[*number_of_players - 1].hand[2].rank,
-            connection_data->speed_data->players[*number_of_players - 1].hand[3].rank,
-            connection_data->speed_data->players[*number_of_players - 1].hand[4].rank
+            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[3].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[4].rank
             );
         // Testing with hardcoded values
         // sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A\0", "10\0", "2\0", "4\0", "J\0", "9\0", "8\0");
@@ -369,7 +373,7 @@ void * attentionThread(void * arg){
             break;
         }
         // Read the data from the socket message
-        sscanf(buffer, "%d", &operation);
+        sscanf(buffer, "%d %d", &operation, &center_pile_number);
 
         printf(" > Client requested operation '%d'\n", operation);
 
@@ -409,7 +413,7 @@ void * attentionThread(void * arg){
     Free all the memory used for the bank data
 */
 // ADD FUTURE STRUCTS THAT YOU MALLOC'D
-void closeBoard(locks_t * data_locks)
+void closeSpeed(locks_t * data_locks)
 {
     // Free all malloc'd data
     // free(bank_data->account_array);
@@ -487,8 +491,8 @@ void setRank(card_t * card, int card_number) {
 }
 
 void setCenterPilesWithRandom(speed_t * speed_data) {
-    //printf("Setting Center Piles With Random Cards\n");
-    // srand(time(NULL));
+    printf("Setting Center Piles With Random Cards\n");
+    srand(time(NULL));
     // Initialize center piles with random numbers
     int random_center_pile_1 = rand() % 13 + 1;
     int random_center_pile_2 = rand() % 13 + 1;
@@ -498,6 +502,8 @@ void setCenterPilesWithRandom(speed_t * speed_data) {
     // Setting rank strings
     setRank(&speed_data->center_pile_1, random_center_pile_1);
     setRank(&speed_data->center_pile_2, random_center_pile_2);
+    // Testing 
+    printf("%s %s\n", speed_data->center_pile_1.rank, speed_data->center_pile_2.rank);
 }
 
 void setPlayerCardsWithRandom(speed_t * speed_data) {
@@ -524,6 +530,7 @@ void setPlayerCardsWithRandom(speed_t * speed_data) {
 
 
 void verify_cards(thread_data_t * board, int player_num, int card, card_t pile){
+
     if(pile.rank_number == board->speed_data->center_pile_1.rank_number){
         if(board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == 1 || 
         board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == -1){
@@ -532,8 +539,8 @@ void verify_cards(thread_data_t * board, int player_num, int card, card_t pile){
             //board->speed_data->center_pile_1.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
             pthread_mutex_unlock(&board->data_locks->center_pile_mutex[1]);
         }else{
-            printf("Card value: %d", board->speed_data->players[player_num].hand[card].rank_number);
-            printf("Wrong value in pile 1");
+            printf("Card value: %d\n", board->speed_data->players[player_num].hand[card].rank_number);
+            printf("Wrong value in pile 1\n");
         }
     }else{
         if(board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_2.rank_number == 1 || 
@@ -543,7 +550,7 @@ void verify_cards(thread_data_t * board, int player_num, int card, card_t pile){
             //board->speed_data->center_pile_2.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
             pthread_mutex_unlock(&board->data_locks->center_pile_mutex[2]);
         }else{
-            printf("Wrong value in pile 2");
+            printf("Wrong value in pile 2\n");
         }
     }
 }
