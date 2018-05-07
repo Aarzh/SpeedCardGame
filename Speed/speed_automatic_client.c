@@ -33,6 +33,7 @@ void speedOperations(int connection_fd);
 void setupHandlers();
 void onInterrupt(int signal);
 automatic_t * play(char buffer[BUFFER_SIZE]);
+void char_to_int(char buffer[BUFFER_SIZE], int array_buffer[BUFFER_SIZE]);
 
 ///// MAIN FUNCTION
 int main(int argc, char * argv[])
@@ -87,6 +88,7 @@ void speedOperations(int connection_fd)
     char fourth_card[3];
     char fifth_card[3];
     automatic_t * selection;
+    //char prueba = 'j';
 
 
     printf("+----------------------------------+\n");
@@ -134,38 +136,33 @@ void speedOperations(int connection_fd)
         //printf("Select an option: ");
         //scanf(" %c", &option);
         selection = play(buffer);
-        selection->card = option;
-        selection->pile = center_pile_number;
+        option = selection->card;
+        center_pile_number = selection->pile;
         // Init variables to default values
+        printf("Operation: %c Pile: %d\n", option, center_pile_number);
         switch(option){
             case '1':
                 operation = FIRST_CARD;
-                printf("First Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
+                printf("First Card!\n");
                 break;
             case '2':
                 operation = SECOND_CARD;
-                printf("Second Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
+                printf("Second Card!\n");
                 break;
             case '3':
                 operation = THIRD_CARD;
-                printf("Third Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
+                printf("Third Card!\n");
                 break;
             case '4':
-                printf("Fourth Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
+                printf("Fourth Card!\n");
                 operation = FOURTH_CARD;
                 break;
             case '5':
-                printf("Fifth Card! Select a pile:\n");
-                scanf("%d", &center_pile_number);
+                printf("Fifth Card!\n");
                 operation = FIFTH_CARD;
                 break;
             case '6':
                 printf("Request sended\n");
-                scanf("%d", &center_pile_number);
                 operation = SHUFFLE;
                 break;
             case '7':
@@ -175,7 +172,7 @@ void speedOperations(int connection_fd)
                 break;
             // Incorrect option
             default:
-                printf("Invalid option. Try again...\n");
+                printf("Invalid option. Try again ...\n");
                 // Skip the rest of the code in the while
                 continue;
         }
@@ -202,12 +199,15 @@ void speedOperations(int connection_fd)
         switch (status){
             case OK:
                 printf("\tTesting... SUCCESS!\n");
+                //scanf("%c", &prueba);
                 break;
             case BYE:
                 printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
+                //scanf("%c", &prueba);
                 break;
             case ERROR: default:
                 printf("\tInvalid operation. Try again\n");
+                //scanf("%c", &prueba);
                 break;
         }
 
@@ -220,23 +220,50 @@ void speedOperations(int connection_fd)
 automatic_t * play(char buffer[BUFFER_SIZE]){
     int verify = 0;
     int i = 3;
+    int array[BUFFER_SIZE];
+    char_to_int(buffer, array);
     automatic_t * operation = malloc(sizeof(*operation));
     while(verify != 1){
-        if(buffer[1] - buffer[i] == 1 || buffer[1] - buffer[i] == -1){
-            operation->card = buffer[i];
+        if(array[1] - array[i] == 1 || array[1] - array[i] == -1){
+            operation->card = i+46;
             operation->pile = 1;
             return operation;
-        }else if(buffer[2] - buffer[i] == 1 || buffer[1] - buffer[i] == -1){
-            operation->card = buffer[i];
-            operation->pile = 1;
+        }else if(array[2] - array[i] == 1 || array[2] - array[i] == -1){
+            operation->card = i+46;
+            operation->pile = 2;
             return operation;
         }else if(i == 8){
             operation->card = '6';
             operation->pile = 0;
+            printf("CANT %c \n",operation->card);
             return operation;
         }else{
             i++;
         }
     }
     return operation;
+}
+
+void char_to_int(char buffer[BUFFER_SIZE], int array_buffer[BUFFER_SIZE]){
+    const char s[2] = {' ', '\0'};
+    char * token;
+    token = strtok(buffer, s);
+    for(int i = 0; i<8; i++){
+        if(*token == 'A'){
+            array_buffer[i] = 1;
+            token = strtok(NULL, s);
+        }else if(*token == 'J'){
+            array_buffer[i] = 11;
+            token = strtok(NULL, s);
+        }else if(*token == 'Q'){
+            array_buffer[i] = 12;
+            token = strtok(NULL, s);
+        }else if(*token == 'K'){
+            array_buffer[i] = 13;
+            token = strtok(NULL, s);
+        }else{
+            array_buffer[i] = atoi(token);
+            token = strtok(NULL, s);
+        }
+    }
 }
