@@ -10,6 +10,8 @@ DEPENDS = fatal_error.h sockets.h speed_codes.h
 CLIENT = speed_client
 #CLIENT = pi_client
 SERVER = speed_server
+#automatic client
+AUTO_CLIENT = speed_automatic_client
 
 ### Variables for the compilation rules ###
 # These should work for most projects, but can be modified when necessary
@@ -31,10 +33,14 @@ LDLIBS = -lpthread
 #   $<  = The first required file of the rule
 
 # Default rule
-all: $(CLIENT) $(SERVER) $(TEST)
+all: $(CLIENT) $(SERVER) $(AUTO_CLIENT) $(TEST)
 
 # Rule to make the client program
 $(CLIENT): $(CLIENT).o $(OBJECTS)
+	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
+
+# Rule to make the automatic client program
+$(AUTO_CLIENT): $(AUTO_CLIENT).o $(OBJECTS)
 	$(CC) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 
 # Rule to make the server program
