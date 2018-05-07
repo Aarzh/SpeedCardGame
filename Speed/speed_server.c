@@ -590,7 +590,7 @@ void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int playe
     // Placing chosen card in the center pile
     speed_data->center_pile[center_pile_number-1].rank_number = speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number;
     // Setting Rank String
-    setRank(&speed_data->center_pile[center_pile_number-1],speed_data->center_pile[center_pile_number].rank_number);
+    setRank(&speed_data->center_pile[center_pile_number-1], speed_data->center_pile[center_pile_number].rank_number);
     // Assigning new random value to the player hand
     srand(time(NULL));
     int new_random = rand() % 13 + 1;
