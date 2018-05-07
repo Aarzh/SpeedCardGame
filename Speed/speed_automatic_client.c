@@ -175,7 +175,7 @@ void speedOperations(int connection_fd)
                 break;
             // Incorrect option
             default:
-                printf("Invalid option. Try again ...\n");
+                printf("Invalid option. Try again...\n");
                 // Skip the rest of the code in the while
                 continue;
         }
