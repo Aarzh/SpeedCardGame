@@ -72,6 +72,7 @@ void speedOperations(int connection_fd)
     char option = 'c';
     int status;
     operation_t operation;
+    int center_pile_number;
     char center_pile_1[3];
     char center_pile_2[3];
     char first_card[3];
@@ -131,21 +132,26 @@ void speedOperations(int connection_fd)
             case '1':
                 operation = FIRST_CARD;
                 printf("First Card! Select a pile:\n");
+                scanf("%d", &center_pile_number);
                 break;
             case '2':
                 operation = SECOND_CARD;
                 printf("Second Card! Select a pile:\n");
+                scanf("%d", &center_pile_number);
                 break;
             case '3':
                 operation = THIRD_CARD;
                 printf("Third Card! Select a pile:\n");
+                scanf("%d", &center_pile_number);
                 break;
             case '4':
                 printf("Fourth Card! Select a pile:\n");
+                scanf("%d", &center_pile_number);
                 operation = FOURTH_CARD;
                 break;
             case '5':
                 printf("Fifth Card! Select a pile:\n");
+                scanf("%d", &center_pile_number);
                 operation = FIFTH_CARD;
                 break;
             case '6':
@@ -161,7 +167,7 @@ void speedOperations(int connection_fd)
         }
 
         // Prepare the message to the server
-        sprintf(buffer, "%d", operation);
+        sprintf(buffer, "%d %d", operation, center_pile_number);
 
         // SEND
         // Send the request
