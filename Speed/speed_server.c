@@ -101,12 +101,13 @@ void closeSpeed(locks_t * data_locks);
 void setupHandlers();
 void onInterrupt(int signal);
 //
-int processOperation(thread_data_t * connection_data, char * buffer, int operation);
+int processOperation(thread_data_t * connection_data, char * buffer, int operation, int center_pile_number);
 // Cards Logic
 void setRank(card_t * card, int card_number);
 void setCenterPilesWithRandom(speed_t * speed_data);
 void setPlayerCardsWithRandom(speed_t * speed_data);
 void verify_cards(thread_data_t * board, int player_num, int card, card_t pile);
+int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
 // void shufflePile(board_t * piles);
 // void randomize (board_t * pile);
 // void swap (card_t * a, card_t * b);
@@ -378,7 +379,7 @@ void * attentionThread(void * arg){
         printf(" > Client requested operation '%d'\n", operation);
 
         // Process the request being careful of data consistency
-        status = processOperation(connection_data, buffer, operation);
+        status = processOperation(connection_data, buffer, operation, center_pile_number);
 
         // Send a reply
         printf(" > Sending status to Client\n");
@@ -420,30 +421,33 @@ void closeSpeed(locks_t * data_locks)
     free(data_locks->center_pile_mutex);
 }
 
-int processOperation(thread_data_t * connection_data, char * buffer, int operation)
+int processOperation(thread_data_t * connection_data, char * buffer, int operation, int center_pile_number)
 {
     int status;
+    //Aaron on each case: verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
 
     switch (operation)
     {
         case FIRST_CARD:
-        verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
+        //validate
+        // if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) 
+        // modify cards
+        // placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, FIRST_CARD, center_pile_number);
         status = 0;
         break;
         case SECOND_CARD:
-        verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
         status = 0;
         break;
         case THIRD_CARD:
-        verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
+        // verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
         status = 0;
         break;
         case FOURTH_CARD:
-        verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
+        // verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
         status = 0;
         break;
         case FIFTH_CARD:
-        verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
+        // verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
         status = 0;
         break;
         case EXIT:
@@ -529,31 +533,50 @@ void setPlayerCardsWithRandom(speed_t * speed_data) {
 }
 
 
-void verify_cards(thread_data_t * board, int player_num, int card, card_t pile){
+int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
+    
+    // if center pile at center pile number is equal to player[indexpos].hand[card selected]
+    if(center_pile_number == 1) { // Validate using center_pile_number
+        // Ace special case
+        if(speed_data->center_pile_1.rank_number == 1) {
 
-    if(pile.rank_number == board->speed_data->center_pile_1.rank_number){
-        if(board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == 1 || 
-        board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == -1){
-            pthread_mutex_lock(&board->data_locks->center_pile_mutex[1]);
-            setRank(&board->speed_data->center_pile_1, board->speed_data->players[player_num].hand[card].rank_number);
-            //board->speed_data->center_pile_1.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
-            pthread_mutex_unlock(&board->data_locks->center_pile_mutex[1]);
-        }else{
-            printf("Card value: %d\n", board->speed_data->players[player_num].hand[card].rank_number);
-            printf("Wrong value in pile 1\n");
+        } else if(speed_data->center_pile_1.rank_number == 1010101) { // King special case
+
+        } else {
+
         }
-    }else{
-        if(board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_2.rank_number == 1 || 
-        board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_2.rank_number == -1){
-            pthread_mutex_lock(&board->data_locks->center_pile_mutex[2]);
-            setRank(&board->speed_data->center_pile_2, board->speed_data->players[player_num].hand[card].rank_number);
-            //board->speed_data->center_pile_2.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
-            pthread_mutex_unlock(&board->data_locks->center_pile_mutex[2]);
-        }else{
-            printf("Wrong value in pile 2\n");
-        }
+        
+        if(speed_data->center_pile_1.rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) {
+
+        }        
     }
 }
+
+// void verify_cards(thread_data_t * board, int player_num, int card, card_t pile){
+
+//     if(pile.rank_number == board->speed_data->center_pile_1.rank_number){
+//         if(board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == 1 || 
+//         board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_1.rank_number == -1){
+//             pthread_mutex_lock(&board->data_locks->center_pile_mutex[1]);
+//             setRank(&board->speed_data->center_pile_1, board->speed_data->players[player_num].hand[card].rank_number);
+//             //board->speed_data->center_pile_1.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
+//             pthread_mutex_unlock(&board->data_locks->center_pile_mutex[1]);
+//         }else{
+//             printf("Card value: %d\n", board->speed_data->players[player_num].hand[card].rank_number);
+//             printf("Wrong value in pile 1\n");
+//         }
+//     }else{
+//         if(board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_2.rank_number == 1 || 
+//         board->speed_data->players[player_num].hand[card].rank_number - board->speed_data->center_pile_2.rank_number == -1){
+//             pthread_mutex_lock(&board->data_locks->center_pile_mutex[2]);
+//             setRank(&board->speed_data->center_pile_2, board->speed_data->players[player_num].hand[card].rank_number);
+//             //board->speed_data->center_pile_2.rank_number = board->speed_data->players[player_num].hand[card].rank_number;
+//             pthread_mutex_unlock(&board->data_locks->center_pile_mutex[2]);
+//         }else{
+//             printf("Wrong value in pile 2\n");
+//         }
+//     }
+// }
 
 
 // void shufflePile(board_t * pile)
