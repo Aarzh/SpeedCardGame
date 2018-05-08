@@ -199,6 +199,8 @@ void speedOperations(int connection_fd){
             case OK:
                 printf("\tTesting... SUCCESS!\n");
                 break;
+            case INVALID_RANK:
+                printf("\tInvalid Rank. (select a card one rank above or below one of the center piles) \n");
             case BYE:
                 printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
                 break;

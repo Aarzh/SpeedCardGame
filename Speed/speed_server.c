@@ -349,6 +349,8 @@ void * attentionThread(void * arg){
             }
         }
 
+
+
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
@@ -427,70 +429,79 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
 {
     int status;
     //Aaron on each case: verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
-
+    printf("Client: %d entering switch(operation)\n", connection_data->connection_fd);
     switch (operation)
     {
         case FIRST_CARD:
-        //validate
-        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) {
-            // modify cards
-            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number);
-        }
-        status = 0;
-        break;
+            //validate
+            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) {
+                status = OK;
+                // modify cards
+                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number);
+            } else {
+                status = INVALID_RANK;
+            }
+            break;
         case SECOND_CARD:
-        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number)) {
-            // modify cards
-            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number);
-        }
-        status = 0;
-        break;
+            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number)) {
+                status = OK;
+                // modify cards
+                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number);
+            } else {
+                status = INVALID_RANK;
+            }
+            break;
         case THIRD_CARD:
-        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number)) {
-            // modify cards
-            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number);
-        }
-        status = 0;
-        break;
+            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number)) {
+                status = OK;
+                // modify cards
+                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number);
+            } else {
+                status = INVALID_RANK;
+            }
+            break;
         case FOURTH_CARD:
-        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number)) {
-            // modify cards
-            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number);
-        }
-        status = 0;
-        break;
+            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number)) {
+                status = OK;
+                // modify cards
+                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number);
+            } else {
+                status = INVALID_RANK;
+            }
+            break;
         case FIFTH_CARD:
-        if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number)) {
-            // modify cards
-            placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number);
-        }
-        status = 0;
-        break;
+            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number)) {
+                status = OK;
+                // modify cards
+                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number);
+            } else {
+                status = INVALID_RANK;
+            }
+            break;
         case SHUFFLE:
-
-        connection_data->speed_data->number_of_clients_stuck++;
-        printf("incremented stuck: %d\n", connection_data->speed_data->number_of_clients_stuck);
-        // Wait until both players are stuck
-        while(connection_data->speed_data->number_of_clients_stuck < 2) {
-            //printf("I will wait...\n");
-            printf("Clients stuck: %d\n", connection_data->speed_data->number_of_clients_stuck);
-        }
-        printf("both are stuck!\n");
-        setCenterPilesWithRandom(connection_data->speed_data);
-        // Reset the counter
-        //connection_data->speed_data->number_of_clients_stuck = 0;
-        status = OK;
-        break;
+            connection_data->speed_data->number_of_clients_stuck++;
+            printf("incremented stuck: %d\n", connection_data->speed_data->number_of_clients_stuck);
+            // Wait until both players are stuck
+            while(connection_data->speed_data->number_of_clients_stuck < 2) {
+                //printf("I will wait...\n");
+                // printf("Clients stuck: %d\n", connection_data->speed_data->number_of_clients_stuck);
+            }
+            printf("both are stuck!\n");
+            // Reset the counter
+            connection_data->speed_data->number_of_clients_stuck = 0;
+            setCenterPilesWithRandom(connection_data->speed_data);
+            status = OK;
+            break;
         case EXIT:
-        status = BYE;
-        break;
-        // Invalid message
+            status = BYE;
+            break;
+            // Invalid message
         default:
             // Print an error locally
-        printf("Unknown operation requested\n");
+            printf("Unknown operation requested\n");
             // Set the error status
-        status = ERROR;
-        break;
+            status = ERROR;
+            break;
     }
     return status;
 }
