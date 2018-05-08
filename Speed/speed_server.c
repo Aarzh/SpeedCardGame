@@ -2,7 +2,6 @@
     Speed Project
     Aaron Zajac, Eugenio Leal, Mauricio Rico
 */
-// TODO:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +39,9 @@
 ///// Structure definitions
 
 typedef struct card_struct {
+    // A string with the card rank
     char rank[MAX_RANK_SIZE];
+    // A number from 0 to 13 representing the card rank
     int rank_number;
 } card_t;
 
@@ -58,16 +59,12 @@ typedef struct speed_struct {
     int number_of_players;
     // Store the amount of clients that are stuck
     int number_of_clients_stuck;
-    // A pointer to clients
+    // Array of players
     player_t players[NUM_CLIENTS];
     // Two center piles
     card_t center_pile[2];
-    // Two replacement piles
-    card_t replacement_pile_1[REPLACEMENT_PILE_SIZE];
-    card_t replacement_pile_2[REPLACEMENT_PILE_SIZE];
 } speed_t;
 
-// TODO: decide if you can have multiple games at a time or not
 // Structure for the mutexes to keep the data consistent
 typedef struct locks_struct {
     // Mutex array
@@ -91,25 +88,22 @@ typedef struct data_struct {
 int isInterrupted = 0;
 
 ///// FUNCTION DECLARATIONS
-// HACE FALTA CHECAR SI DEBEMOS DE HACER UN STRUCT DE BARAJAS
-// QUE ESTE DENTRO DE OTRO STRUCT DE PLAYER QUE VA A TENER TURNO Y BARAJAS DEL JUGADOR
 void usage(char * program);
 void initSpeed(speed_t * speed_data, locks_t * data_locks);
 void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_locks);
 void * attentionThread(void * arg);
 void closeSpeed(locks_t * data_locks);
+// Attention Thread Helper Functions
+int processOperation(thread_data_t * connection_data, char * buffer, int operation, int center_pile_number);
 // Signals
 void setupHandlers();
 void onInterrupt(int signal);
-//
-int processOperation(thread_data_t * connection_data, char * buffer, int operation, int center_pile_number);
 // Cards Logic
 void setRank(card_t * card, int card_number);
 void setCenterPilesWithRandom(speed_t * speed_data);
 void setPlayerCardsWithRandom(speed_t * speed_data);
 int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
 void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
-// void verify_cards(thread_data_t * board, int player_num, int card, int pile);
 
 ///// MAIN FUNCTION
 int main(int argc, char * argv[])
@@ -196,6 +190,7 @@ void setupHandlers()
 */
 // HACEN FALTA CORRECCIONES DEPENDIENDO EL STRUCT
 void initSpeed(speed_t * speed_data, locks_t * data_locks){
+
     // Initialize the number of players to zero
     speed_data->number_of_players = 0;
     // Initialize the number of clients that are stuck
@@ -239,15 +234,14 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
     // Get the size of the structure to store client information
     client_address_size = sizeof client_address;
 
-    while (!isInterrupted){
+    while (!isInterrupted)
+    {
         //// POLL
         // Create a structure array to hold the file descriptors to poll
         struct pollfd test_fds[1];
         // Fill in the structure
         test_fds[0].fd = server_fd;
         test_fds[0].events = POLLIN;    // Check for incomming data
-        // Testing
-        // printf("Testing... Number of Players: %d\n", speed_data->number_of_players);
 
         // Random seed in a loop for better randomness
         srand(time(NULL));
@@ -290,7 +284,6 @@ void waitForConnections(int server_fd, speed_t * speed_data, locks_t * data_lock
                 connection_data->connection_fd = client_fd;
                 connection_data->speed_data = speed_data;
                 connection_data->data_locks = data_locks;
-                // printf("the index position should be: %d\n", speed_data->number_of_players);
                 connection_data->index_position = speed_data->number_of_players;
 
 
@@ -319,27 +312,22 @@ void * attentionThread(void * arg){
 
     // Local variable to avoid using large structure/variable names
     int * number_of_players = &connection_data->speed_data->number_of_players;
-    // Increment player counter by one
-    *number_of_players = *number_of_players + 1;
-    // printf("Number of Players: %d\n", *(number_of_players));
-    // Testing
-    // printf("I will be working at players[%d] index position\n", connection_data->index_position);
-
-
-    // Note: don't know if this function may be placed in the wrong line and might cause unwanted game behavior
-    setPlayerCardsWithRandom(connection_data->speed_data);
-
     char buffer[BUFFER_SIZE];
     int operation = 0;
     int center_pile_number;
     int status;
     int automatic = 0;
 
+    // Increment player counter by one
+    *number_of_players = *number_of_players + 1;
+
+    // Set the player hand with random cards
+    setPlayerCardsWithRandom(connection_data->speed_data);
+
     // Loop to listen for messages from the client
     while(operation != EXIT || !isInterrupted) {
-        //printf("The client fd is: %d\n the fixed index position: %d\n", connection_data->connection_fd, connection_data->index_position);
 
-        // Wait for oponent before sending anything to client
+        // Wait for oponent before sending cards to client
         while(*number_of_players < 2) {
             // printf("waiting for oponent\n");
             if(*number_of_players == 2) {
@@ -348,8 +336,6 @@ void * attentionThread(void * arg){
                 ++*number_of_players;
             }
         }
-
-
 
         printf(" > Sending cards to Client\n");
         // SEND
@@ -364,17 +350,14 @@ void * attentionThread(void * arg){
             connection_data->speed_data->players[connection_data->index_position].hand[3].rank,
             connection_data->speed_data->players[connection_data->index_position].hand[4].rank
             );
-        // Testing with hardcoded values
-        // sprintf(buffer, "%d %s %s %s %s %s %s %s", 0, "A\0", "10\0", "2\0", "4\0", "J\0", "9\0", "8\0");
         sendString(connection_data->connection_fd, buffer);
 
-        // // RECV
-        // // Receive the request
+        // RECV
+        // Receive the request
         if( !recvString(connection_data->connection_fd, buffer, BUFFER_SIZE) )
         {
             printf("Client closed the connection 1\n");
             connection_data->speed_data->number_of_players--;
-            if(connection_data->speed_data)
             break;
         }
         // Read the data from the socket message
@@ -443,6 +426,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             }
             break;
         case SECOND_CARD:
+            //validate
             if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
@@ -452,6 +436,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             }
             break;
         case THIRD_CARD:
+            //validate
             if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
@@ -461,6 +446,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             }
             break;
         case FOURTH_CARD:
+            //validate
             if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
@@ -470,6 +456,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             }
             break;
         case FIFTH_CARD:
+            //validate
             if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
@@ -479,23 +466,22 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             }
             break;
         case SHUFFLE:
+            // Increment the number of clients that are stuck
             connection_data->speed_data->number_of_clients_stuck++;
-            printf("incremented stuck: %d\n", connection_data->speed_data->number_of_clients_stuck);
+            printf("incremented number of stuck players: %d\n", connection_data->speed_data->number_of_clients_stuck);
             // Wait until both players are stuck
-            while(connection_data->speed_data->number_of_clients_stuck < 2) {
-                //printf("I will wait...\n");
-                // printf("Clients stuck: %d\n", connection_data->speed_data->number_of_clients_stuck);
-            }
+            while(connection_data->speed_data->number_of_clients_stuck < 2) {}
             printf("both are stuck!\n");
             // Reset the counter
             connection_data->speed_data->number_of_clients_stuck = 0;
+            // Place random cards in the center piles
             setCenterPilesWithRandom(connection_data->speed_data);
             status = OK;
             break;
         case EXIT:
             status = BYE;
             break;
-            // Invalid message
+        // Invalid message
         default:
             // Print an error locally
             printf("Unknown operation requested\n");
@@ -506,6 +492,9 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
     return status;
 }
 
+/*
+    Assigns a string cooresponding to its 0-13 card number
+*/
 void setRank(card_t * card, int card_number) {
     if(card_number == 1) {
         strcpy(card->rank, "A\0");
@@ -536,6 +525,9 @@ void setRank(card_t * card, int card_number) {
     }
 }
 
+/*
+    Place Random cards in the center piles
+*/
 void setCenterPilesWithRandom(speed_t * speed_data) {
     printf("Setting Center Piles With Random Cards\n");
     srand(time(NULL));
@@ -552,10 +544,10 @@ void setCenterPilesWithRandom(speed_t * speed_data) {
     printf("%s %s\n", speed_data->center_pile[0].rank, speed_data->center_pile[1].rank);
 }
 
+/*
+    Place Random cards in both of the players hands
+*/
 void setPlayerCardsWithRandom(speed_t * speed_data) {
-    // printf("Setting Cards With Random Cards\n");
-    // printf("\n");
-
     // Initialize cards with random numbers
     for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
     {
@@ -567,21 +559,19 @@ void setPlayerCardsWithRandom(speed_t * speed_data) {
         // Setting Rank string
         setRank(&speed_data->players[0].hand[i], player1_random);
         setRank(&speed_data->players[1].hand[i], player2_random);
-        // Testing
-        // printf("%s ", speed_data->players[0].hand[i].rank);
     }
-    // printf("\n");
-    // printf("\n");
 }
 
-
+/*
+    
+*/
 int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
 
     // if center pile at center pile number is equal to player[indexpos].hand[card selected]
     if(speed_data->center_pile[center_pile_number-1].rank_number == 1)
     { // Ace special case
         if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -12 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -1) {
-            printf("Testing... ace case success\n");
+            printf("Testing... ace case validate operation success\n");
             return 1;
         } else {
             return 0;
@@ -590,7 +580,7 @@ int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_in
     else if(speed_data->center_pile[center_pile_number-1].rank_number == 13)
     { // King special case
         if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 12 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 1) {
-            printf("Testing... king case success\n");
+            printf("Testing... king case validate operation success\n");
             return 1;
         } else {
             return 0;
@@ -599,7 +589,7 @@ int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_in
     else
     {
         if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 1 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -1) {
-            printf("Testing... any case success\n");
+            printf("Testing... validate operation success\n");
             return 1;
         } else {
             return 0;
@@ -609,12 +599,12 @@ int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_in
 
 void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
     // Mutex protect center pile
-    // pthread_mutex_lock(&data_locks->center_pile_mutex[center_pile_number-1]);
+    pthread_mutex_lock(&data_locks->center_pile_mutex[center_pile_number-1]);
     // Changing Center Pile Rank String
     setRank(&speed_data->center_pile[center_pile_number-1], speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number);
     // Placing chosen card in the center pile
     speed_data->center_pile[center_pile_number-1].rank_number = speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number;
-    // pthread_mutex_lock(&data_locks->center_pile_mutex[center_pile_number-1]);
+    pthread_mutex_unlock(&data_locks->center_pile_mutex[center_pile_number-1]);
 
     // Assigning new random value to the player hand
     srand(time(NULL));

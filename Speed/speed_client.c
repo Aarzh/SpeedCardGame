@@ -93,7 +93,7 @@ void speedOperations(int connection_fd){
     attending = 1;
 
     while (option != 'x'){
-        printf("Testing.. Receiving cards from Server\n");
+        printf(" > Receiving cards from Server\n");
         // Receive the cards
 
         // RECV
@@ -102,8 +102,6 @@ void speedOperations(int connection_fd){
             printf("Server closed the connection\n");
             break;
         }
-        //testing buffer
-        printf("Buffer:\n %s\n", buffer);
         // Extract the data
         sscanf(buffer, "%d %s %s %s %s %s %s %s", &status, center_pile_1, center_pile_2, first_card, second_card, third_card, fourth_card, fifth_card);
 
@@ -197,7 +195,7 @@ void speedOperations(int connection_fd){
         // Print the result
         switch (status){
             case OK:
-                printf("\tTesting... SUCCESS!\n");
+                printf("\tSUCCESS!\n");
                 break;
             case INVALID_RANK:
                 printf("\tInvalid Rank. (select a card one rank above or below one of the center piles) \n");
