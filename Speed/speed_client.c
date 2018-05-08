@@ -113,7 +113,7 @@ void speedOperations(int connection_fd){
         printf("+----------------------------------+\n");
         printf("          %s %s %s %s %s \n", first_card, second_card, third_card, fourth_card, fifth_card);
         printf("+----------------------------------+\n");
-        printf("| Your Pile:          %d\n", cards_drop);
+        printf("| Your Pile:                    %d |\n", cards_drop);
         printf("+----------------------------------+\n");
 
         int breakFromLoop = 1;
