@@ -83,7 +83,7 @@ void speedOperations(int connection_fd){
     printf("| How to Play                      |\n");
     printf("+----------------------------------+\n");
     printf("| 1-5) Select Card #               |\n");
-    printf("| 6) Shuffle center piles          |\n");
+    printf("| 6) I am stuck                    |\n");
     printf("| 7) Exit program                  |\n");
     printf("+----------------------------------+\n");
 
@@ -157,8 +157,7 @@ void speedOperations(int connection_fd){
                     breakFromLoop = 0;
                     break;
                 case '6':
-                    printf("Request sended\n");
-                    scanf("%d", &center_pile_number);
+                    printf("I'm stuck!\n");
                     operation = SHUFFLE;
                     breakFromLoop = 0;
                     break;
@@ -177,7 +176,7 @@ void speedOperations(int connection_fd){
                     continue;
             }
         }
-
+        printf(" > Sending to Server\n");
         // Prepare the message to the server
         sprintf(buffer, "%d %d", operation, center_pile_number);
 
@@ -185,7 +184,7 @@ void speedOperations(int connection_fd){
         // Send the request
         sendString(connection_fd, buffer);
 
-        //printf("Testing.. Receiving status from Server\n");
+        printf(" > Receiving status from Server\n");
         // RECV
         // Receive the response
         if ( !recvString(connection_fd, buffer, BUFFER_SIZE) ){
@@ -200,6 +199,8 @@ void speedOperations(int connection_fd){
             case OK:
                 printf("\tTesting... SUCCESS!\n");
                 break;
+            case INVALID_RANK:
+                printf("\tInvalid Rank. (select a card one rank above or below one of the center piles) \n");
             case BYE:
                 printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
                 break;
