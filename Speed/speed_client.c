@@ -113,14 +113,14 @@ void speedOperations(int connection_fd){
         printf("+----------------------------------+\n");
         printf("          %s %s %s %s %s \n", first_card, second_card, third_card, fourth_card, fifth_card);
         printf("+----------------------------------+\n");
-        printf("| Your Pile:          %d\n", cards_drop);
+        printf("| Cards Left in Draw Pile          |\n");
         printf("+----------------------------------+\n");
+        printf("                %d\n\n", cards_drop);
 
         int breakFromLoop = 1;
         // Init variables to default values
         while(breakFromLoop)
         {
-
             printf("Select an option: ");
             scanf(" %c", &option);
 
@@ -203,9 +203,10 @@ void speedOperations(int connection_fd){
                 --cards_drop;
                 break;
             case INVALID_RANK:
-                printf("\tInvalid Rank. (select a card one rank above or below one of the center piles) \n");
+                printf("\tInvalid Rank or Oponent was faster. Try again!(select a card one rank above or below one of the center piles) \n");
+                break;
             case BYE:
-                printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
+                printf("\tThanks for connecting to our Speed Game. Good bye!%d\n",BYE);
                 break;
             case ERROR: default:
                 printf("\tInvalid operation. Try again\n");
