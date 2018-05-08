@@ -348,8 +348,10 @@ void * attentionThread(void * arg){
                 ++*number_of_players;
             }
         }
-
-
+        if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 0){
+            printf("Client %d has won!", connection_data->index_position);
+            operation = EXIT;
+        }
 
         printf(" > Sending cards to Client\n");
         // SEND

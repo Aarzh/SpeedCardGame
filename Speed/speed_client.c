@@ -77,6 +77,7 @@ void speedOperations(int connection_fd){
     char third_card[3];
     char fourth_card[3];
     char fifth_card[3];
+    int cards_drop = 0;
 
 
     printf("+----------------------------------+\n");
@@ -92,7 +93,7 @@ void speedOperations(int connection_fd){
 
     attending = 1;
 
-    while (option != 'x'){
+    while (cards_drop <= 20){
         printf("Testing.. Receiving cards from Server\n");
         // Receive the cards
 
@@ -198,6 +199,7 @@ void speedOperations(int connection_fd){
         switch (status){
             case OK:
                 printf("\tTesting... SUCCESS!\n");
+                ++cards_drop;
                 break;
             case INVALID_RANK:
                 printf("\tInvalid Rank. (select a card one rank above or below one of the center piles) \n");
@@ -213,4 +215,5 @@ void speedOperations(int connection_fd){
         // Send (this send avoids errors)
         sendString(connection_fd, buffer);
     }
+    printf("*** YOU WON ***\n");
 }

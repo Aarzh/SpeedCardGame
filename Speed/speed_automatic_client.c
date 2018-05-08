@@ -26,10 +26,11 @@ typedef struct automatic_game_struct{
 
 int exit_flag = 0; // exit flag starts as false
 int attending = 0;
+int result = 0;
 
 ///// FUNCTION DECLARATIONS
 void usage(char * program);
-void speedOperations(int connection_fd, int test);
+void speedOperations(int connection_fd, int result);
 void setupHandlers();
 void onInterrupt(int signal);
 automatic_t * play(char buffer[BUFFER_SIZE]);
@@ -49,28 +50,14 @@ int main(int argc, char * argv[]){
     // Start the server
     connection_fd = connectSocket(argv[1], argv[2]);
 
-    int test = strncmp(argv[3], "a", 2);
-    int test2 = strncmp(argv[3], "e", 2);
+    result = strncmp(argv[3], "-a", 2);
+    printf("%d\n", result);
+	// Use the bank operations available
+    speedOperations(connection_fd, result);
+    // Close the socket
+    close(connection_fd);
 
-    // printf("%d\n", test);
-    // printf("%d\n", test2);
-
-    if (test == 0){ // SI ES A
-        // Use the bank operations available
-        speedOperations(connection_fd, test);
-        // Close the socket
-        close(connection_fd);
-
-        return 0;
-
-    } else if (test2 == 0){ // SI ES E
-        // Use the bank operations available
-        speedOperations(connection_fd, test);
-        // Close the socket
-        close(connection_fd);
-
-        return 0;
-    }
+    return 0;
 }
 
 ///// FUNCTION DEFINITIONS
@@ -80,14 +67,14 @@ int main(int argc, char * argv[]){
 */
 void usage(char * program){
     printf("Usage:\n");
-    printf("\t%s {server_address} {port_number} {a or e flag}\n", program);
+    printf("\t%s {server_address} {port_number} {-a or -e flag}\n", program);
     exit(EXIT_FAILURE);
 }
 
 /*
     Main menu with the options available to the user
 */
-void speedOperations(int connection_fd, int test){
+void speedOperations(int connection_fd, int result){
     char buffer[BUFFER_SIZE];
     char option = 'c';
     int status;
@@ -101,8 +88,8 @@ void speedOperations(int connection_fd, int test){
     char fourth_card[3];
     char fifth_card[3];
     automatic_t * selection;
-    char prueba = 'j';
-
+    char flag;
+    int cards_drop = 0;
 
     printf("+----------------------------------+\n");
     printf("| How to Play                      |\n");
@@ -117,7 +104,7 @@ void speedOperations(int connection_fd, int test){
 
     attending = 1;
 
-    while (option != 'x')
+    while (cards_drop <= 20)
     {
         printf("Testing.. Receiving cards from Server\n");
         // Receive the cards
@@ -209,11 +196,12 @@ void speedOperations(int connection_fd, int test){
         sscanf(buffer, "%d", &status);
 
         // See if the flags makes it automatic or requires an enter
-        if (test == 0){
+        if (result == 1){
             // Print the result
             switch (status){
                 case OK:
                     printf("\tTesting... SUCCESS!\n");
+                    ++cards_drop;
                     break;
                 case BYE:
                     printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
@@ -222,19 +210,20 @@ void speedOperations(int connection_fd, int test){
                     printf("\tInvalid operation. Try again\n");
                     break;
             }
-        } else if(test == 4){
+        } else if(result == 0){
             // Print the result
             switch (status){
                 case OK:
                     printf("\tTesting... SUCCESS!\n");
-                    scanf("%c", &prueba);
+                    ++cards_drop;
+                    scanf("%c", &flag);
                     break;
                 case BYE:
                     printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
-                    scanf("%c", &prueba);
+                    scanf("%c", &flag);
                     break;
                 case ERROR: default:
-                    scanf("%c", &prueba);
+                    scanf("%c", &flag);
                     printf("\tInvalid operation. Try again\n");
                     break;
             }
@@ -244,6 +233,7 @@ void speedOperations(int connection_fd, int test){
         // Send (this send avoids errors)
         sendString(connection_fd, buffer);
     }
+    printf("*** YOU WON! ***\n");
 }
 
 automatic_t * play(char buffer[BUFFER_SIZE]){
