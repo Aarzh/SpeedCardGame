@@ -19,9 +19,6 @@
 
 #define BUFFER_SIZE 1024
 
-int exit_flag = 0; // exit flag starts as false
-int attending = 0;
-
 ///// FUNCTION DECLARATIONS
 void usage(char * program);
 void speedOperations(int connection_fd);
@@ -77,6 +74,7 @@ void speedOperations(int connection_fd){
     char third_card[3];
     char fourth_card[3];
     char fifth_card[3];
+    int cards_drop = 0;
 
 
     printf("+----------------------------------+\n");
@@ -89,16 +87,16 @@ void speedOperations(int connection_fd){
 
     // First wait until player 2 arrives
     printf("Wait for oponent to connect..\n\n");
+        
+    while (cards_drop <= 20)
+    {
 
-    attending = 1;
-
-    while (option != 'x'){
         printf(" > Receiving cards from Server\n");
-        // Receive the cards
 
         // RECV
-        // Receive the response
-        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) ){
+        // Receive the cards
+        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) )
+        {
             printf("Server closed the connection\n");
             break;
         }
@@ -118,12 +116,14 @@ void speedOperations(int connection_fd){
 
         int breakFromLoop = 1;
         // Init variables to default values
-        while(breakFromLoop){
+        while(breakFromLoop)
+        {
 
             printf("Select an option: ");
             scanf(" %c", &option);
 
-            switch(option){
+            switch(option)
+            {
                 case '1':
                     operation = FIRST_CARD;
                     printf("First Card! Select a pile (1/2): ");
@@ -185,7 +185,8 @@ void speedOperations(int connection_fd){
         printf(" > Receiving status from Server\n");
         // RECV
         // Receive the response
-        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) ){
+        if ( !recvString(connection_fd, buffer, BUFFER_SIZE) )
+        {
             printf("Server closed the connection\n");
             break;
         }
@@ -193,9 +194,11 @@ void speedOperations(int connection_fd){
         sscanf(buffer, "%d", &status);
 
         // Print the result
-        switch (status){
+        switch (status)
+        {
             case OK:
                 printf("\tSUCCESS!\n");
+                ++cards_drop;
                 break;
             case INVALID_RANK:
                 printf("\tInvalid Rank. (select a card one rank above or below one of the center piles) \n");
@@ -211,4 +214,5 @@ void speedOperations(int connection_fd){
         // Send (this send avoids errors)
         sendString(connection_fd, buffer);
     }
+    printf("*** YOU WON ***\n");
 }

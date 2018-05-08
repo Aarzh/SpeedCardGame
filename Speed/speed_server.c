@@ -14,10 +14,6 @@
 #include <sys/poll.h>
 // Posix threads library
 #include <pthread.h>
-// Pretty Unicode Card Suits
-// #include <wchar.h>
-// #include <locale.h>
-
 // Custom libraries
 #include "speed_codes.h"
 #include "sockets.h"
@@ -26,10 +22,6 @@
 #define NUM_CLIENTS 2
 #define BUFFER_SIZE 1024
 #define MAX_QUEUE 5
-// #define BLACK_SPADE_SUIT 0x2660     // ♠
-// #define WHITE_HEART_SUIT 0x2661     // ♡
-// #define WHITE_DIAMOND_SUIT 0x2662   // ♢
-// #define BLACK_CLUB_SUIT 0x2663      // ♣
 #define MAX_RANK_SIZE 3
 #define CENTER_PILE_SIZE 52
 #define REPLACEMENT_PILE_SIZE 5
@@ -102,7 +94,7 @@ void onInterrupt(int signal);
 void setRank(card_t * card, int card_number);
 void setCenterPilesWithRandom(speed_t * speed_data);
 void setPlayerCardsWithRandom(speed_t * speed_data);
-int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
+int isValidRank(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
 void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
 
 ///// MAIN FUNCTION
@@ -186,9 +178,8 @@ void setupHandlers()
 
 /*
     Function to initialize all the information necessary
-    This will allocate memory for the accounts, and for the mutexes
+    This will allocate memory for the mutexes
 */
-// HACEN FALTA CORRECCIONES DEPENDIENDO EL STRUCT
 void initSpeed(speed_t * speed_data, locks_t * data_locks){
 
     // Initialize the number of players to zero
@@ -203,8 +194,8 @@ void initSpeed(speed_t * speed_data, locks_t * data_locks){
     for (int i=0; i<NUM_CLIENTS; i++)
     {
         // Initializing mutex array using either of the following methods
-        // data_locks->center_pile_mutex[i] = PTHREAD_MUTEX_INITIALIZER;
-        pthread_mutex_init(&data_locks->center_pile_mutex[i], NULL);
+        // data_locks->center_pile_mutex[i] = PTHREAD_MUTEX_INITIALIZER; // method 1
+        pthread_mutex_init(&data_locks->center_pile_mutex[i], NULL); // method 2
     }
 
     // Initialize players draw piles
@@ -337,6 +328,11 @@ void * attentionThread(void * arg){
             }
         }
 
+        if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 0){
+            printf("Client %d has won!", connection_data->index_position);
+            operation = EXIT;
+        }
+
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
@@ -411,13 +407,12 @@ void closeSpeed(locks_t * data_locks)
 int processOperation(thread_data_t * connection_data, char * buffer, int operation, int center_pile_number)
 {
     int status;
-    //Aaron on each case: verify_cards(connection_data, 1, operation, connection_data->speed_data->center_pile_1);
-    printf("Client: %d entering switch(operation)\n", connection_data->connection_fd);
+    // Testing // printf("Client: %d entering switch(operation)\n", connection_data->connection_fd);
     switch (operation)
     {
         case FIRST_CARD:
             //validate
-            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) {
+            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number);
@@ -427,7 +422,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             break;
         case SECOND_CARD:
             //validate
-            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number)) {
+            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number);
@@ -437,7 +432,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             break;
         case THIRD_CARD:
             //validate
-            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number)) {
+            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number);
@@ -447,7 +442,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             break;
         case FOURTH_CARD:
             //validate
-            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number)) {
+            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number);
@@ -457,7 +452,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
             break;
         case FIFTH_CARD:
             //validate
-            if(validateOperation(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number)) {
+            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number)) {
                 status = OK;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number);
@@ -529,7 +524,6 @@ void setRank(card_t * card, int card_number) {
     Place Random cards in the center piles
 */
 void setCenterPilesWithRandom(speed_t * speed_data) {
-    printf("Setting Center Piles With Random Cards\n");
     srand(time(NULL));
     // Initialize center piles with random numbers
     int random_center_pile_1 = rand() % 13 + 1;
@@ -540,8 +534,7 @@ void setCenterPilesWithRandom(speed_t * speed_data) {
     // Setting rank strings
     setRank(&speed_data->center_pile[0], random_center_pile_1);
     setRank(&speed_data->center_pile[1], random_center_pile_2);
-    // Testing
-    printf("%s %s\n", speed_data->center_pile[0].rank, speed_data->center_pile[1].rank);
+    // For Testing purposes use: // printf("Setting Center Piles With Random Cards:\n%s %s\n", speed_data->center_pile[0].rank, speed_data->center_pile[1].rank);
 }
 
 /*
@@ -551,6 +544,7 @@ void setPlayerCardsWithRandom(speed_t * speed_data) {
     // Initialize cards with random numbers
     for (int i = 0; i < PLAYER_HAND_SIZE; ++i)
     {
+        // Two random numbers
         int player1_random = rand() % 13 + 1;
         int player2_random = rand() % 13 + 1;
         // Setting Rank number
@@ -563,24 +557,23 @@ void setPlayerCardsWithRandom(speed_t * speed_data) {
 }
 
 /*
-    
+    Return true if the card you selected is one rank above or below one of the center piles
 */
-int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
+int isValidRank(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
 
-    // if center pile at center pile number is equal to player[indexpos].hand[card selected]
     if(speed_data->center_pile[center_pile_number-1].rank_number == 1)
-    { // Ace special case
+    { // Ace special case (Ace in the center pile selected)
         if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -12 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -1) {
-            printf("Testing... ace case validate operation success\n");
+            printf("Testing... ace case validate rank success\n");
             return 1;
         } else {
             return 0;
         }
     }
     else if(speed_data->center_pile[center_pile_number-1].rank_number == 13)
-    { // King special case
+    { // King special case (King in the center pile selected)
         if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 12 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 1) {
-            printf("Testing... king case validate operation success\n");
+            printf("Testing... king case validate rank success\n");
             return 1;
         } else {
             return 0;
@@ -589,7 +582,7 @@ int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_in
     else
     {
         if((speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == 1 || (speed_data->center_pile[center_pile_number-1].rank_number - speed_data->players[players_index_position].hand[card_selected_hand_index].rank_number) == -1) {
-            printf("Testing... validate operation success\n");
+            // For Testing purposes use: // printf("Testing... validate rank success\n");
             return 1;
         } else {
             return 0;
@@ -597,6 +590,9 @@ int validateOperation(speed_t * speed_data, locks_t * data_locks, int players_in
     }
 }
 
+/*
+    Once validated, place your card in the center pile and assign a new random card to your hand
+*/
 void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number) {
     // Mutex protect center pile
     pthread_mutex_lock(&data_locks->center_pile_mutex[center_pile_number-1]);

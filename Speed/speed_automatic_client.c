@@ -88,8 +88,8 @@ void speedOperations(int connection_fd, int result){
     char fourth_card[3];
     char fifth_card[3];
     automatic_t * selection;
-    char prueba = 'j';
-
+    char flag;
+    int cards_drop = 0;
 
     printf("+----------------------------------+\n");
     printf("| How to Play                      |\n");
@@ -104,7 +104,7 @@ void speedOperations(int connection_fd, int result){
 
     attending = 1;
 
-    while (option != 'x')
+    while (cards_drop <= 20)
     {
         printf("Testing.. Receiving cards from Server\n");
         // Receive the cards
@@ -201,6 +201,7 @@ void speedOperations(int connection_fd, int result){
             switch (status){
                 case OK:
                     printf("\tTesting... SUCCESS!\n");
+                    ++cards_drop;
                     break;
                 case BYE:
                     printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
@@ -214,14 +215,15 @@ void speedOperations(int connection_fd, int result){
             switch (status){
                 case OK:
                     printf("\tTesting... SUCCESS!\n");
-                    scanf("%c", &prueba);
+                    ++cards_drop;
+                    scanf("%c", &flag);
                     break;
                 case BYE:
                     printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
-                    scanf("%c", &prueba);
+                    scanf("%c", &flag);
                     break;
                 case ERROR: default:
-                    scanf("%c", &prueba);
+                    scanf("%c", &flag);
                     printf("\tInvalid operation. Try again\n");
                     break;
             }
@@ -231,6 +233,7 @@ void speedOperations(int connection_fd, int result){
         // Send (this send avoids errors)
         sendString(connection_fd, buffer);
     }
+    printf("*** YOU WON! ***\n");
 }
 
 automatic_t * play(char buffer[BUFFER_SIZE]){
