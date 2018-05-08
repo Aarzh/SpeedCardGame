@@ -336,7 +336,52 @@ void * attentionThread(void * arg){
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
-        sprintf(buffer, "%d %s %s %s %s %s %s %s",
+        if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 4){
+            sprintf(buffer, "%d %s %s %s %s %s %s %s",
+            0,
+            connection_data->speed_data->center_pile[0].rank,
+            connection_data->speed_data->center_pile[1].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[3].rank,
+            "0"
+            );
+        }else if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 3){
+            sprintf(buffer, "%d %s %s %s %s %s %s %s",
+            0,
+            connection_data->speed_data->center_pile[0].rank,
+            connection_data->speed_data->center_pile[1].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
+            "0",
+            "0"
+            );
+        }else if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 2){
+            sprintf(buffer, "%d %s %s %s %s %s %s %s",
+            0,
+            connection_data->speed_data->center_pile[0].rank,
+            connection_data->speed_data->center_pile[1].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
+            "0",
+            "0",
+            "0"
+            );
+        }else if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 1){
+            sprintf(buffer, "%d %s %s %s %s %s %s %s",
+            0,
+            connection_data->speed_data->center_pile[0].rank,
+            connection_data->speed_data->center_pile[1].rank,
+            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+            "0",
+            "0",
+            "0",
+            "0"
+            );
+        }else{
+            sprintf(buffer, "%d %s %s %s %s %s %s %s",
             0,
             connection_data->speed_data->center_pile[0].rank,
             connection_data->speed_data->center_pile[1].rank,
@@ -346,6 +391,7 @@ void * attentionThread(void * arg){
             connection_data->speed_data->players[connection_data->index_position].hand[3].rank,
             connection_data->speed_data->players[connection_data->index_position].hand[4].rank
             );
+        }
         sendString(connection_data->connection_fd, buffer);
 
         // RECV

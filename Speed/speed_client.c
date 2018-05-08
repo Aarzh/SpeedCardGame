@@ -74,7 +74,7 @@ void speedOperations(int connection_fd){
     char third_card[3];
     char fourth_card[3];
     char fifth_card[3];
-    int cards_drop = 0;
+    int cards_drop = 15;
 
 
     printf("+----------------------------------+\n");
@@ -88,7 +88,7 @@ void speedOperations(int connection_fd){
     // First wait until player 2 arrives
     printf("Wait for oponent to connect..\n\n");
         
-    while (cards_drop <= 20)
+    while (cards_drop != 0)
     {
 
         printf(" > Receiving cards from Server\n");
@@ -112,6 +112,8 @@ void speedOperations(int connection_fd){
         printf("| Your Hand                        |\n");
         printf("+----------------------------------+\n");
         printf("          %s %s %s %s %s \n", first_card, second_card, third_card, fourth_card, fifth_card);
+        printf("+----------------------------------+\n");
+        printf("| Your Pile:          %d\n", cards_drop);
         printf("+----------------------------------+\n");
 
         int breakFromLoop = 1;
@@ -198,7 +200,7 @@ void speedOperations(int connection_fd){
         {
             case OK:
                 printf("\tSUCCESS!\n");
-                ++cards_drop;
+                --cards_drop;
                 break;
             case INVALID_RANK:
                 printf("\tInvalid Rank. (select a card one rank above or below one of the center piles) \n");

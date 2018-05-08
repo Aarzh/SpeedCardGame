@@ -89,7 +89,7 @@ void speedOperations(int connection_fd, int result){
     char fifth_card[3];
     automatic_t * selection;
     char flag;
-    int cards_drop = 0;
+    int cards_drop = 15;
 
     printf("+----------------------------------+\n");
     printf("| How to Play                      |\n");
@@ -104,7 +104,7 @@ void speedOperations(int connection_fd, int result){
 
     attending = 1;
 
-    while (cards_drop <= 20)
+    while (cards_drop != 0)
     {
         printf("Testing.. Receiving cards from Server\n");
         // Receive the cards
@@ -132,6 +132,8 @@ void speedOperations(int connection_fd, int result){
         printf("| Your Hand                        |\n");
         printf("+----------------------------------+\n");
         printf("          %s %s %s %s %s \n", first_card, second_card, third_card, fourth_card, fifth_card);
+        printf("+----------------------------------+\n");
+        printf("| Your Pile: \t %d", cards_drop);
         printf("+----------------------------------+\n");
         //printf("Select an option: ");
         //scanf(" %c", &option);
@@ -201,7 +203,7 @@ void speedOperations(int connection_fd, int result){
             switch (status){
                 case OK:
                     printf("\tTesting... SUCCESS!\n");
-                    ++cards_drop;
+                    --cards_drop;
                     break;
                 case BYE:
                     printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
@@ -215,7 +217,7 @@ void speedOperations(int connection_fd, int result){
             switch (status){
                 case OK:
                     printf("\tTesting... SUCCESS!\n");
-                    ++cards_drop;
+                    --cards_drop;
                     scanf("%c", &flag);
                     break;
                 case BYE:
