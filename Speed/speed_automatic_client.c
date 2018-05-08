@@ -26,32 +26,34 @@ typedef struct automatic_game_struct{
 
 int exit_flag = 0; // exit flag starts as false
 int attending = 0;
+int result = 0;
 
 ///// FUNCTION DECLARATIONS
 void usage(char * program);
-void speedOperations(int connection_fd);
+void speedOperations(int connection_fd, int result);
 void setupHandlers();
 void onInterrupt(int signal);
 automatic_t * play(char buffer[BUFFER_SIZE]);
 void char_to_int(char buffer[BUFFER_SIZE], int array_buffer[BUFFER_SIZE]);
 
 ///// MAIN FUNCTION
-int main(int argc, char * argv[])
-{
+int main(int argc, char * argv[]){
     int connection_fd;
 
     printf("\n=== SPEED CARD GAME ===\n");
 
     // Check the correct arguments
-    if (argc != 3)
-    {
+    if (argc != 4){
         usage(argv[0]);
     }
 
     // Start the server
     connection_fd = connectSocket(argv[1], argv[2]);
+
+    result = strncmp(argv[3], "-a", 2);
+    printf("%d\n", result);
 	// Use the bank operations available
-    speedOperations(connection_fd);
+    speedOperations(connection_fd, result);
     // Close the socket
     close(connection_fd);
 
@@ -63,18 +65,16 @@ int main(int argc, char * argv[])
 /*
     Explanation to the user of the parameters required to run the program
 */
-void usage(char * program)
-{
+void usage(char * program){
     printf("Usage:\n");
-    printf("\t%s {server_address} {port_number}\n", program);
+    printf("\t%s {server_address} {port_number} {-a or -e flag}\n", program);
     exit(EXIT_FAILURE);
 }
 
 /*
     Main menu with the options available to the user
 */
-void speedOperations(int connection_fd)
-{
+void speedOperations(int connection_fd, int result){
     char buffer[BUFFER_SIZE];
     char option = 'c';
     int status;
@@ -88,7 +88,7 @@ void speedOperations(int connection_fd)
     char fourth_card[3];
     char fifth_card[3];
     automatic_t * selection;
-    //char prueba = 'j';
+    char prueba = 'j';
 
 
     printf("+----------------------------------+\n");
@@ -195,20 +195,36 @@ void speedOperations(int connection_fd)
         // Extract the data
         sscanf(buffer, "%d", &status);
 
-        // Print the result
-        switch (status){
-            case OK:
-                printf("\tTesting... SUCCESS!\n");
-                //scanf("%c", &prueba);
-                break;
-            case BYE:
-                printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
-                //scanf("%c", &prueba);
-                break;
-            case ERROR: default:
-                printf("\tInvalid operation. Try again\n");
-                //scanf("%c", &prueba);
-                break;
+        // See if the flags makes it automatic or requires an enter
+        if (result == 1){
+            // Print the result
+            switch (status){
+                case OK:
+                    printf("\tTesting... SUCCESS!\n");
+                    break;
+                case BYE:
+                    printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
+                    break;
+                case ERROR: default:
+                    printf("\tInvalid operation. Try again\n");
+                    break;
+            }
+        } else if(result == 0){
+            // Print the result
+            switch (status){
+                case OK:
+                    printf("\tTesting... SUCCESS!\n");
+                    scanf("%c", &prueba);
+                    break;
+                case BYE:
+                    printf("\tThanks for connecting to the bank. Good bye!%d\n",BYE);
+                    scanf("%c", &prueba);
+                    break;
+                case ERROR: default:
+                    scanf("%c", &prueba);
+                    printf("\tInvalid operation. Try again\n");
+                    break;
+            }
         }
 
         // SEND
