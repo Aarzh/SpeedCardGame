@@ -26,7 +26,7 @@
 #define CENTER_PILE_SIZE 52
 #define REPLACEMENT_PILE_SIZE 5
 #define PLAYER_HAND_SIZE 5
-#define DRAW_PILE_SIZE 6 // Testing
+#define DRAW_PILE_SIZE 15
 
 ///// Structure definitions
 
@@ -334,7 +334,7 @@ void * attentionThread(void * arg){
             operation = EXIT;
         }
 
-        printf("Testing... Cards left in draw pile %d\n", connection_data->speed_data->players[connection_data->index_position].draw_pile);
+        // printf("Testing... Cards left in draw pile %d\n", connection_data->speed_data->players[connection_data->index_position].draw_pile);
 
         printf(" > Sending cards to Client\n");
         // SEND
