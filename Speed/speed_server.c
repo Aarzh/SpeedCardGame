@@ -334,6 +334,8 @@ void * attentionThread(void * arg){
             operation = EXIT;
         }
 
+        // printf("Testing... Cards left in draw pile %d\n", connection_data->speed_data->players[connection_data->index_position].draw_pile);
+
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
@@ -447,7 +449,6 @@ void * attentionThread(void * arg){
 void closeSpeed(locks_t * data_locks)
 {
     // Free all malloc'd data
-    // free(bank_data->account_array);
     free(data_locks->center_pile_mutex);
 }
 
@@ -464,6 +465,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
                 --connection_data->speed_data->players[connection_data->index_position].draw_pile;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number);
+                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
             } else {
                 status = INVALID_RANK;
             }
@@ -475,6 +477,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
                 --connection_data->speed_data->players[connection_data->index_position].draw_pile;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number);
+                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
             } else {
                 status = INVALID_RANK;
             }
@@ -486,6 +489,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
                 --connection_data->speed_data->players[connection_data->index_position].draw_pile;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number);
+                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
             } else {
                 status = INVALID_RANK;
             }
@@ -497,6 +501,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
                 --connection_data->speed_data->players[connection_data->index_position].draw_pile;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number);
+                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
             } else {
                 status = INVALID_RANK;
             }
@@ -508,6 +513,7 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
                 --connection_data->speed_data->players[connection_data->index_position].draw_pile;
                 // modify cards
                 placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number);
+                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
             } else {
                 status = INVALID_RANK;
             }
