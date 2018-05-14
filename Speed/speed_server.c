@@ -87,6 +87,7 @@ void * attentionThread(void * arg);
 void closeSpeed(locks_t * data_locks);
 // Attention Thread Helper Functions
 int processOperation(thread_data_t * connection_data, char * buffer, int operation, int center_pile_number);
+int processOption(thread_data_t * connection_data, int card_selected, int center_pile_number);
 // Signals
 void setupHandlers();
 void onInterrupt(int signal);
@@ -96,6 +97,7 @@ void setCenterPilesWithRandom(speed_t * speed_data);
 void setPlayerCardsWithRandom(speed_t * speed_data);
 int isValidRank(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
 void placeCardInCenterPile(speed_t * speed_data, locks_t * data_locks, int players_index_position, int card_selected_hand_index, int center_pile_number);
+void sprintfDependingOnDrawPile(thread_data_t * connection_data, char * buffer, int draw_pile_num);
 
 ///// MAIN FUNCTION
 int main(int argc, char * argv[])
@@ -339,62 +341,7 @@ void * attentionThread(void * arg){
         printf(" > Sending cards to Client\n");
         // SEND
         // Send the cards to player
-        if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 4){
-            sprintf(buffer, "%d %s %s %s %s %s %s %s",
-            0,
-            connection_data->speed_data->center_pile[0].rank,
-            connection_data->speed_data->center_pile[1].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[3].rank,
-            "0\0"
-            );
-        }else if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 3){
-            sprintf(buffer, "%d %s %s %s %s %s %s %s",
-            0,
-            connection_data->speed_data->center_pile[0].rank,
-            connection_data->speed_data->center_pile[1].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
-            "0\0",
-            "0\0"
-            );
-        }else if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 2){
-            sprintf(buffer, "%d %s %s %s %s %s %s %s",
-            0,
-            connection_data->speed_data->center_pile[0].rank,
-            connection_data->speed_data->center_pile[1].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
-            "0\0",
-            "0\0",
-            "0\0"
-            );
-        }else if(connection_data->speed_data->players[connection_data->index_position].draw_pile == 1){
-            sprintf(buffer, "%d %s %s %s %s %s %s %s",
-            0,
-            connection_data->speed_data->center_pile[0].rank,
-            connection_data->speed_data->center_pile[1].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
-            "0\0",
-            "0\0",
-            "0\0",
-            "0\0"
-            );
-        }else{
-            sprintf(buffer, "%d %s %s %s %s %s %s %s",
-            0,
-            connection_data->speed_data->center_pile[0].rank,
-            connection_data->speed_data->center_pile[1].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[3].rank,
-            connection_data->speed_data->players[connection_data->index_position].hand[4].rank
-            );
-        }
+        sprintfDependingOnDrawPile(connection_data, buffer,connection_data->speed_data->players[connection_data->index_position].draw_pile);
         sendString(connection_data->connection_fd, buffer);
 
         // RECV
@@ -452,6 +399,68 @@ void closeSpeed(locks_t * data_locks)
     free(data_locks->center_pile_mutex);
 }
 
+/*
+    When client is about to win do an sprintf depending on the draw pile number
+*/
+void sprintfDependingOnDrawPile(thread_data_t * connection_data, char * buffer, int draw_pile_num) {
+    if(draw_pile_num == 4){
+        sprintf(buffer, "%d %s %s %s %s %s %s %s",
+        0,
+        connection_data->speed_data->center_pile[0].rank,
+        connection_data->speed_data->center_pile[1].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[3].rank,
+        "0\0"
+        );
+    }else if(draw_pile_num == 3){
+        sprintf(buffer, "%d %s %s %s %s %s %s %s",
+        0,
+        connection_data->speed_data->center_pile[0].rank,
+        connection_data->speed_data->center_pile[1].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
+        "0\0",
+        "0\0"
+        );
+    }else if(draw_pile_num == 2){
+        sprintf(buffer, "%d %s %s %s %s %s %s %s",
+        0,
+        connection_data->speed_data->center_pile[0].rank,
+        connection_data->speed_data->center_pile[1].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
+        "0\0",
+        "0\0",
+        "0\0"
+        );
+    }else if(draw_pile_num == 1){
+        sprintf(buffer, "%d %s %s %s %s %s %s %s",
+        0,
+        connection_data->speed_data->center_pile[0].rank,
+        connection_data->speed_data->center_pile[1].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+        "0\0",
+        "0\0",
+        "0\0",
+        "0\0"
+        );
+    }else{
+        sprintf(buffer, "%d %s %s %s %s %s %s %s",
+        0,
+        connection_data->speed_data->center_pile[0].rank,
+        connection_data->speed_data->center_pile[1].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[0].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[1].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[2].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[3].rank,
+        connection_data->speed_data->players[connection_data->index_position].hand[4].rank
+        );
+    }
+}
+
 int processOperation(thread_data_t * connection_data, char * buffer, int operation, int center_pile_number)
 {
     int status;
@@ -459,64 +468,19 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
     switch (operation)
     {
         case FIRST_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, FIRST_CARD, center_pile_number);
             break;
         case SECOND_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, SECOND_CARD, center_pile_number);
             break;
         case THIRD_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, THIRD_CARD, center_pile_number);
             break;
         case FOURTH_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, FOURTH_CARD, center_pile_number);
             break;
         case FIFTH_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, FIFTH_CARD, center_pile_number);
             break;
         case SHUFFLE:
             // Increment the number of clients that are stuck
@@ -544,6 +508,23 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
     }
     return status;
 }
+
+/*
+    Check if the selected card is a valid rank that can be placed in one of the center piles, and place it there
+*/
+int processOption(thread_data_t * connection_data, int card_selected, int center_pile_number) {
+    //validate
+    if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, card_selected, center_pile_number)) {
+        --connection_data->speed_data->players[connection_data->index_position].draw_pile;
+        // modify cards
+        placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, card_selected, center_pile_number);
+        connection_data->speed_data->players[connection_data->index_position].draw_pile--;
+        return OK;
+    } else {
+        return INVALID_RANK;
+    }
+}
+
 
 /*
     Assigns a string cooresponding to its 0-13 card number
