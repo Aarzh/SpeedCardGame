@@ -2,6 +2,7 @@
     Speed Project
     Aaron Zajac, Eugenio Leal, Mauricio Rico
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
