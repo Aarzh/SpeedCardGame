@@ -87,6 +87,7 @@ void * attentionThread(void * arg);
 void closeSpeed(locks_t * data_locks);
 // Attention Thread Helper Functions
 int processOperation(thread_data_t * connection_data, char * buffer, int operation, int center_pile_number);
+int processOption(thread_data_t * connection_data, int card_selected, int center_pile_number);
 // Signals
 void setupHandlers();
 void onInterrupt(int signal);
@@ -459,64 +460,19 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
     switch (operation)
     {
         case FIRST_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIRST_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, FIRST_CARD, center_pile_number);
             break;
         case SECOND_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, SECOND_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, SECOND_CARD, center_pile_number);
             break;
         case THIRD_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, THIRD_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, THIRD_CARD, center_pile_number);
             break;
         case FOURTH_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FOURTH_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, FOURTH_CARD, center_pile_number);
             break;
         case FIFTH_CARD:
-            //validate
-            if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number)) {
-                status = OK;
-                --connection_data->speed_data->players[connection_data->index_position].draw_pile;
-                // modify cards
-                placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, FIFTH_CARD, center_pile_number);
-                connection_data->speed_data->players[connection_data->index_position].draw_pile--;
-            } else {
-                status = INVALID_RANK;
-            }
+            status = processOption(connection_data, FIFTH_CARD, center_pile_number);
             break;
         case SHUFFLE:
             // Increment the number of clients that are stuck
@@ -544,6 +500,20 @@ int processOperation(thread_data_t * connection_data, char * buffer, int operati
     }
     return status;
 }
+
+int processOption(thread_data_t * connection_data, int card_selected, int center_pile_number) {
+    //validate
+    if(isValidRank(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, card_selected, center_pile_number)) {
+        --connection_data->speed_data->players[connection_data->index_position].draw_pile;
+        // modify cards
+        placeCardInCenterPile(connection_data->speed_data, connection_data->data_locks, connection_data->index_position, card_selected, center_pile_number);
+        connection_data->speed_data->players[connection_data->index_position].draw_pile--;
+        return OK;
+    } else {
+        return INVALID_RANK;
+    }
+}
+
 
 /*
     Assigns a string cooresponding to its 0-13 card number
